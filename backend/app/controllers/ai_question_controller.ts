@@ -12,6 +12,7 @@ import {
 import { BedrockTimeoutError, BedrockInvocationError, BedrockClient } from '../support/bedrock_client.js'
 import questionService from '#services/question_service'
 import bedrockConfig from '#config/bedrock'
+import logger from '@adonisjs/core/services/logger'
 
 export default class AiQuestionController {
   /**
@@ -42,10 +43,15 @@ export default class AiQuestionController {
         return response.unprocessableEntity({ error: error.message })
       }
       if (error instanceof BedrockTimeoutError) {
+        logger.error({ err: error }, 'Bedrock timeout during AI question generation')
         return response.status(504).json({ error: 'A geração excedeu o tempo limite. Tente novamente.' })
       }
       if (error instanceof BedrockInvocationError) {
-        return response.status(502).json({ error: 'Erro ao comunicar com o serviço de IA.' })
+        logger.error({ err: error, cause: error.cause }, 'Bedrock invocation error during AI question generation')
+        return response.status(502).json({
+          error: 'Erro ao comunicar com o serviço de IA.',
+          details: error.message,
+        })
       }
       throw error
     }

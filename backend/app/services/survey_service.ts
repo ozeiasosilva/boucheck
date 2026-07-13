@@ -98,11 +98,12 @@ export class InvalidRulesError extends Error {
 export interface CreateSurveyInput {
   nome: string
   slug: string
-  categoria_id: number
+  categoria_id?: number | null
   mensagem_objetivo?: string
   tempo_estimado_min?: number
   link_agendamento?: string
   email_notificacao?: string
+  usar_ia_no_relatorio?: boolean
 }
 
 export interface UpdateSurveyInput {
@@ -165,13 +166,14 @@ export class SurveyService {
     const survey = await Survey.create({
       slug: input.slug,
       nome: input.nome,
-      categoriaId: input.categoria_id,
+      categoriaId: input.categoria_id ?? null,
       status: 'rascunho' as SurveyStatus,
       version: 1,
       mensagemObjetivo: input.mensagem_objetivo ?? null,
       tempoEstimadoMin: input.tempo_estimado_min ?? null,
       linkAgendamento: input.link_agendamento ?? null,
       emailNotificacao: input.email_notificacao ?? null,
+      usarIaNoRelatorio: input.usar_ia_no_relatorio ?? false,
     })
 
     return toView(survey)

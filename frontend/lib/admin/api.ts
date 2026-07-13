@@ -14,7 +14,9 @@ export class AdminApiError extends Error {
     public status: number,
     public body: Record<string, unknown>
   ) {
-    super((body.error as string) || (body.message as string) || `API error ${status}`)
+    const base = (body.error as string) || (body.message as string) || `API error ${status}`
+    const details = body.details as string | undefined
+    super(details ? `${base} (${details})` : base)
     this.name = 'AdminApiError'
   }
 }
@@ -425,7 +427,7 @@ export const scoreRangesApi = {
 export interface AiGenerateParams {
   tema: string
   quantidade: number
-  tipos: string[]
+  tipos_permitidos: string[]
   publico_alvo: string
 }
 

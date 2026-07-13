@@ -50,7 +50,7 @@ export default function QuestionsPage() {
 
   // AI generation
   const [aiModal, setAiModal] = useState(false)
-  const [aiForm, setAiForm] = useState({ tema: '', quantidade: '5', publico_alvo: '', tipos: 'escolha_unica,multipla_escolha,aberta' })
+  const [aiForm, setAiForm] = useState({ tema: '', quantidade: '5', publico_alvo: '', tipos_permitidos: 'escolha_unica,multipla_escolha,aberta' })
   const [aiLoading, setAiLoading] = useState(false)
   const [aiPreview, setAiPreview] = useState<AiQuestion[]>([])
   const [aiConfirming, setAiConfirming] = useState(false)
@@ -252,7 +252,7 @@ export default function QuestionsPage() {
       const result = await aiApi.generate(Number(id), {
         tema: aiForm.tema,
         quantidade: Number(aiForm.quantidade),
-        tipos: aiForm.tipos.split(',').filter(Boolean),
+        tipos_permitidos: aiForm.tipos_permitidos.split(',').filter(Boolean),
         publico_alvo: aiForm.publico_alvo,
       })
       setAiPreview(result.questions)

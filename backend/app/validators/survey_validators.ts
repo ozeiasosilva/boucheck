@@ -9,11 +9,12 @@ export const createSurveyValidator = vine.compile(
   vine.object({
     nome: vine.string().trim().minLength(1).maxLength(255),
     slug: slugRule,
-    categoria_id: vine.number().positive(),
+    categoria_id: vine.number().positive().nullable().optional(),
     mensagem_objetivo: vine.string().maxLength(1000).optional(),
     tempo_estimado_min: vine.number().positive().optional(),
     link_agendamento: vine.string().url().optional(),
     email_notificacao: vine.string().email().optional(),
+    usar_ia_no_relatorio: vine.boolean().optional(),
   })
 )
 

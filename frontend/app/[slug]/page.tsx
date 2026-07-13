@@ -16,7 +16,7 @@ interface SurveyLanding {
     cor_fundo: string
     logo_s3_key: string | null
     tema?: 'claro' | 'escuro'
-  }
+  } | null
   logo_url: string | null
 }
 
@@ -78,9 +78,15 @@ export default async function SurveyLandingPage({
     notFound()
   }
 
-  const { config_visual } = survey
+  const config_visual = survey.config_visual ?? {
+    cor_primaria: '#4F46E5',
+    cor_secundaria: '#6366F1',
+    cor_fundo: '#f9fafb',
+    logo_s3_key: null,
+    tema: 'claro' as const,
+  }
   const isDark = config_visual.tema === 'escuro'
-  const bgColor = isDark ? '#1a1a2e' : config_visual.cor_fundo
+  const bgColor = isDark ? '#1a1a2e' : (config_visual.cor_fundo || '#f9fafb')
   const cardBg = isDark ? '#2d2d44' : '#ffffff'
   const textColor = isDark ? '#e2e8f0' : '#374151'
   const mutedColor = isDark ? '#94a3b8' : '#6B7280'

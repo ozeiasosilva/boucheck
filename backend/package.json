@@ -23,6 +23,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format:check": "prettier --check .",
+    "worker": "npx tsx bin/worker.ts",
     "test": "node ace test"
   },
   "dependencies": {
