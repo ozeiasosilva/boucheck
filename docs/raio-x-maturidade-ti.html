@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raio-X de Maturidade de TI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#16232E; --ink-soft:#3C4B57; --paper:#F3F6F7; --card:#FFFFFF;
+    --accent:#0E7C86; --accent-dark:#0A5A61; --accent-soft:#E3F0F1;
+    --amber:#D99A32; --red:#C4453C; --red-soft:#FBEEED; --green:#3E8E5A; --green-soft:#EAF4EE;
+    --line:#DBE3E6; --radius:14px;
+    --font-display:"Bricolage Grotesque",system-ui,sans-serif;
+    --font-body:"IBM Plex Sans",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font-body);background:var(--paper);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 20px 64px}
+
+  /* ---------- Welcome ---------- */
+  .hero{background:var(--ink);color:#EAF1F3;border-radius:var(--radius);padding:44px 36px 40px;position:relative;overflow:hidden}
+  .hero .brand{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#8FB6BB;font-weight:600;margin-bottom:22px}
+  .hero h1{font-family:var(--font-display);font-weight:800;font-size:clamp(30px,5vw,42px);line-height:1.08;max-width:520px}
+  .hero p.lead{margin-top:16px;max-width:480px;color:#C4D3D8;font-size:16px}
+  .hero .meta{margin-top:26px;display:flex;gap:22px;flex-wrap:wrap;font-size:14px;color:#9DB4BA}
+  .hero .meta span strong{color:#EAF1F3}
+  .sweep{position:absolute;right:-70px;top:-70px;width:300px;height:300px;opacity:.5;pointer-events:none}
+  @media (max-width:640px){.sweep{width:200px;height:200px;right:-60px;top:-60px}}
+  .sweep .beam{transform-origin:150px 150px;animation:spin 9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.sweep .beam{animation:none}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:32px;margin-top:18px}
+  .card h2{font-family:var(--font-display);font-weight:700;font-size:20px;margin-bottom:6px}
+  .card p.sub{color:var(--ink-soft);font-size:14px;margin-bottom:20px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--ink-soft)}
+  .field input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:15px;background:#FBFCFC}
+  .field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .req::after{content:" *";color:var(--red)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:600;font-size:15px;
+       padding:13px 26px;border-radius:10px;border:none;cursor:pointer;background:var(--accent);color:#fff;transition:background .15s}
+  .btn:hover{background:var(--accent-dark)}
+  .btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  .btn.ghost{background:transparent;color:var(--accent-dark);border:1px solid var(--accent)}
+  .btn.ghost:hover{background:var(--accent-soft)}
+  .btn.small{padding:9px 16px;font-size:14px}
+
+  /* ---------- Quiz ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+  .topbar .pillar-tag{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-dark);
+        background:var(--accent-soft);padding:5px 11px;border-radius:99px;white-space:nowrap}
+  .topbar .count{font-size:13px;color:var(--ink-soft);white-space:nowrap}
+  .progress{height:5px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:26px}
+  .progress .fill{height:100%;background:var(--accent);border-radius:99px;transition:width .35s ease}
+
+  .qtext{font-family:var(--font-display);font-weight:700;font-size:clamp(20px,3.4vw,25px);line-height:1.25;margin-bottom:6px}
+  .qhelp{color:var(--ink-soft);font-size:14px;margin-bottom:20px}
+  .opts{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+  .opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;padding:14px 16px;border:1.5px solid var(--line);
+       border-radius:11px;background:#FBFCFC;font:inherit;font-size:15px;cursor:pointer;transition:border-color .12s,background .12s}
+  .opt:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .opt:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+  .opt.selected{border-color:var(--accent);background:var(--accent-soft)}
+  .opt .key{flex:0 0 auto;width:26px;height:26px;border-radius:7px;background:var(--ink);color:#fff;font-weight:600;font-size:13px;
+       display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .opt.selected .key{background:var(--accent)}
+  textarea{width:100%;min-height:110px;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;font:inherit;font-size:15px;background:#FBFCFC;resize:vertical}
+  textarea:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+  .nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:26px;gap:12px}
+  .backlink{background:none;border:none;font:inherit;font-size:14px;color:var(--ink-soft);cursor:pointer;padding:8px 4px}
+  .backlink:hover{color:var(--ink);text-decoration:underline}
+  .hint{font-size:13px;color:var(--ink-soft);margin-top:14px}
+
+  /* ---------- Results ---------- */
+  .score-hero{background:var(--ink);color:#EAF1F3;border-radius:var(--radius);padding:36px;display:flex;gap:30px;align-items:center;flex-wrap:wrap}
+  .score-num{font-family:var(--font-display);font-weight:800;font-size:64px;line-height:1}
+  .score-num small{font-size:22px;font-weight:600;color:#8FB6BB}
+  .level-badge{display:inline-block;padding:7px 16px;border-radius:99px;font-weight:700;font-size:14px;margin-top:10px}
+  .score-desc{flex:1;min-width:240px}
+  .score-desc h2{font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:6px}
+  .score-desc p{color:#C4D3D8;font-size:14px}
+
+  .chart-box{position:relative;width:100%;max-width:520px;margin:8px auto 0}
+  .legend-note{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:8px}
+
+  .pillar-row{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .pillar-row:last-child{border-bottom:none}
+  .pillar-row .pname{flex:1;font-size:14px;font-weight:600}
+  .pillar-row .bar{flex:2;height:9px;background:var(--line);border-radius:99px;overflow:hidden}
+  .pillar-row .bar i{display:block;height:100%;border-radius:99px}
+  .pillar-row .pscore{width:44px;text-align:right;font-weight:600;font-size:14px}
+
+  .risk{display:flex;gap:12px;padding:13px 15px;border:1px solid var(--line);border-left:4px solid var(--red);border-radius:10px;margin-bottom:10px;background:#fff}
+  .risk .rtitle{font-weight:600;font-size:14px}
+  .risk .rsvc{font-size:13px;color:var(--ink-soft);margin-top:3px}
+  .alertbox{background:var(--red-soft);border:1px solid #E6C2BF;border-radius:11px;padding:16px 18px;font-size:14px;margin-top:14px}
+  .alertbox strong{color:var(--red)}
+  .okbox{background:var(--green-soft);border:1px solid #C9E2D2;border-radius:11px;padding:16px 18px;font-size:14px;margin-top:14px}
+  .quotebox{background:var(--accent-soft);border-radius:11px;padding:16px 18px;font-size:14px;margin-top:10px}
+  .quotebox b{display:block;margin-bottom:4px;font-size:13px;color:var(--accent-dark);text-transform:uppercase;letter-spacing:.06em}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+  .fineprint{font-size:12px;color:var(--ink-soft);margin-top:26px;text-align:center}
+  .hidden{display:none}
+
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .card,.score-hero{border:none;box-shadow:none;page-break-inside:avoid}
+    .wrap{padding:0;max-width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ WELCOME ============ -->
+  <section id="screen-welcome">
+    <div class="hero">
+      <svg class="sweep" viewBox="0 0 300 300" aria-hidden="true">
+        <circle cx="150" cy="150" r="140" fill="none" stroke="#3C5560" stroke-width="1"/>
+        <circle cx="150" cy="150" r="100" fill="none" stroke="#3C5560" stroke-width="1"/>
+        <circle cx="150" cy="150" r="60" fill="none" stroke="#3C5560" stroke-width="1"/>
+        <g class="beam">
+          <line x1="150" y1="150" x2="150" y2="10" stroke="#0E7C86" stroke-width="2"/>
+          <path d="M150 150 L150 10 A140 140 0 0 1 218 26 Z" fill="#0E7C86" opacity="0.18"/>
+        </g>
+        <circle cx="150" cy="150" r="4" fill="#0E7C86"/>
+      </svg>
+      <div class="brand" id="brand-name">Assessment de TI</div>
+      <h1>Raio-X de Maturidade de TI da sua empresa</h1>
+      <p class="lead">Responda perguntas objetivas sobre o dia a dia da sua operação e receba um diagnóstico com gráfico de maturidade, nível da sua TI e os principais riscos identificados.</p>
+      <div class="meta">
+        <span>⏱ <strong>~12 minutos</strong></span>
+        <span>📊 <strong>6 pilares avaliados</strong></span>
+        <span>🎯 <strong>Relatório imediato</strong></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Antes de começar</h2>
+      <p class="sub">Seus dados identificam o relatório. Não é preciso conhecimento técnico — quando não souber, responda "Não sei" com tranquilidade: isso também faz parte do diagnóstico.</p>
+      <div class="field"><label class="req" for="f-nome">Seu nome</label><input id="f-nome" autocomplete="name" placeholder="Ex.: Carlos Almeida"></div>
+      <div class="field"><label class="req" for="f-empresa">Empresa</label><input id="f-empresa" autocomplete="organization" placeholder="Ex.: Almeida Distribuidora"></div>
+      <div class="field"><label for="f-cargo">Cargo</label><input id="f-cargo" autocomplete="organization-title" placeholder="Ex.: Diretor de Operações"></div>
+      <div class="field"><label for="f-email">E-mail para receber o relatório</label><input id="f-email" type="email" autocomplete="email" placeholder="voce@empresa.com.br"></div>
+      <div style="margin-top:20px"><button class="btn" id="btn-start">Iniciar diagnóstico →</button></div>
+      <p class="hint" id="start-error" style="color:var(--red);display:none">Preencha ao menos nome e empresa para continuar.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section id="screen-quiz" class="hidden">
+    <div class="topbar">
+      <span class="pillar-tag" id="q-pillar"></span>
+      <span class="count" id="q-count"></span>
+    </div>
+    <div class="progress"><div class="fill" id="q-progress" style="width:0%"></div></div>
+    <div class="card">
+      <div class="qtext" id="q-text"></div>
+      <div class="qhelp" id="q-help"></div>
+      <div class="opts" id="q-opts"></div>
+      <div class="nav-row">
+        <button class="backlink" id="btn-back">← Voltar</button>
+        <button class="btn hidden" id="btn-next">Continuar →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="screen-results" class="hidden">
+    <div class="score-hero">
+      <div>
+        <div class="score-num"><span id="r-score">0</span><small>/100</small></div>
+        <span class="level-badge" id="r-level"></span>
+      </div>
+      <div class="score-desc">
+        <h2 id="r-title"></h2>
+        <p id="r-desc"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Maturidade por pilar</h2>
+      <p class="sub">Comparativo entre a sua empresa e o nível recomendado de mercado (Gerenciado — 70 pontos).</p>
+      <div class="chart-box"><canvas id="radar"></canvas></div>
+      <p class="legend-note">— Sua empresa &nbsp;•&nbsp; ⬡ Nível recomendado</p>
+      <div style="margin-top:22px" id="r-bars"></div>
+    </div>
+
+    <div class="card" id="r-critical-card" style="display:none">
+      <h2>Descompasso crítico</h2>
+      <div class="alertbox" id="r-critical"></div>
+    </div>
+
+    <div class="card">
+      <h2>Principais riscos identificados</h2>
+      <p class="sub" id="r-risks-sub"></p>
+      <div id="r-risks"></div>
+      <div id="r-dontknow"></div>
+    </div>
+
+    <div class="card" id="r-priority-card" style="display:none">
+      <h2>O que você nos disse</h2>
+      <div id="r-priority"></div>
+    </div>
+
+    <div class="card no-print">
+      <h2>Próximo passo</h2>
+      <p class="sub">Este resultado é o ponto de partida. Na reunião de devolutiva, apresentamos o plano de evolução em 3 ondas (0–90 dias, 3–6 meses, 6–12 meses) para elevar sua TI ao nível recomendado.</p>
+      <div class="actions">
+        <button class="btn" id="btn-contact">Agendar devolutiva gratuita</button>
+        <button class="btn ghost" onclick="window.print()">Salvar relatório em PDF</button>
+        <button class="btn ghost small" id="btn-json">Baixar dados (JSON)</button>
+      </div>
+      <p class="hint" id="send-status"></p>
+    </div>
+
+    <p class="fineprint">Diagnóstico gerado automaticamente a partir das respostas fornecidas. <span id="brand-footer"></span></p>
+  </section>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIGURAÇÃO — edite aqui para personalizar sua marca
+===================================================================== */
+const CONFIG = {
+  brandName:  "BeOnUp Tecnologia",            // aparece no topo e rodapé
+  contactEmail: "contato@beonup.com.br",      // recebe o pedido de devolutiva
+  whatsapp:   "",                             // ex.: "5516999999999" — se preenchido, botão abre WhatsApp
+  webhookUrl: "",                             // ex.: URL do Google Apps Script / n8n para receber respostas via POST
+  benchmark:  70
+};
+
+/* =====================================================================
+   BANCO DE PERGUNTAS
+   showIf(a)  -> pergunta aparece (senão é SUPRIMIDA: fora do cálculo)
+   zeroIf(a)  -> pergunta não aparece mas PONTUA 0 (prática ausente)
+===================================================================== */
+const PILLARS = {
+  PF:{name:"Perfil da empresa", scored:false},
+  P1:{name:"Segurança da Informação", short:"Segurança", weight:.25},
+  P2:{name:"Backup & Continuidade",   short:"Continuidade", weight:.20},
+  P3:{name:"Infraestrutura & Performance", short:"Infraestrutura", weight:.15},
+  P4:{name:"Capacidade & Escalabilidade",  short:"Capacidade", weight:.10},
+  P5:{name:"Monitoramento",           short:"Monitoramento", weight:.15},
+  P6:{name:"Governança & Processos",  short:"Governança", weight:.15},
+  LG:{name:"LGPD & Compliance",       short:"LGPD", weight:.10, optional:true},
+  FC:{name:"Fechamento", scored:false}
+};
+
+const Q = [
+/* ---------- PERFIL ---------- */
+{id:"PF-01",p:"PF",t:"Quantos colaboradores utilizam computador ou sistemas no dia a dia?",
+ o:[["a","Até 20"],["b","21 a 50"],["c","51 a 150"],["d","151 a 500"],["e","Mais de 500"]]},
+{id:"PF-02",p:"PF",t:"Qual o segmento principal da empresa?",
+ o:[["a","Indústria"],["b","Comércio / Varejo"],["c","Serviços"],["d","Saúde"],["e","Financeiro / Contábil"],["f","Educação"],["g","Outro"]]},
+{id:"PF-03",p:"PF",t:"Se os sistemas da empresa parassem agora, em quanto tempo a operação seria seriamente impactada?",
+ o:[["a","Em minutos — operamos 100% dependentes de sistemas"],["b","Em algumas horas"],["c","Em 1 dia"],["d","Conseguiríamos operar alguns dias no manual"]]},
+{id:"PF-04",p:"PF",t:"Como é estruturada a TI da empresa hoje?",
+ o:[["a","Equipe interna de TI"],["b","1 pessoa interna + apoio externo pontual"],["c","100% terceirizada"],["d","Não temos ninguém formal — \"quem entende mais ajuda\""]]},
+{id:"PF-05",p:"PF",t:"Onde rodam os sistemas críticos da empresa?",h:"Pode marcar mais de uma opção.",multi:true,
+ o:[["a","Servidores dentro da empresa"],["b","Nuvem (AWS, Azure, Google Cloud...)"],["c","Sistemas de terceiros / SaaS"],["d","Não sei",true]]},
+
+/* ---------- P1 SEGURANÇA ---------- */
+{id:"SG-01",p:"P1",short:"Histórico de incidentes",svc:"Plano de resposta a incidentes",
+ t:"Nos últimos 24 meses, a empresa sofreu algum incidente de segurança?",h:"Vírus, ransomware, invasão, golpe por e-mail, vazamento de dados.",
+ o:[["a","Sim, com impacto sério (parada, perda de dados ou prejuízo)",0],["b","Sim, mas contido sem grandes danos",2],["c","Não que eu saiba",3],["d","Não, e temos como comprovar (relatórios/auditoria)",4]]},
+{id:"SG-01a",p:"P1",short:"Reação pós-incidente",svc:"Plano de resposta a incidentes / retainer de emergência",
+ t:"Após o incidente, o que mudou na empresa?",
+ showIf:a=>["a","b"].includes(a["SG-01"]),
+ o:[["a","Nada de estruturado — resolvemos e seguimos",0],["b","Trocamos algumas ferramentas/senhas",1],["c","Revisão formal e melhorias implementadas",3],["d","Apoio especializado + plano de resposta criado",4]]},
+{id:"SG-02",p:"P1",short:"Proteção de computadores",svc:"Segurança gerenciada (EDR + console central)",
+ t:"Todos os computadores possuem antivírus/proteção gerenciada centralmente?",
+ o:[["a","Não sei / cada um instala o seu",0,true],["b","Alguns têm, sem padrão",1],["c","Todos têm, mas ninguém acompanha alertas",2],["d","Todos têm, com acompanhamento ativo",4]]},
+{id:"SG-03",p:"P1",short:"Duplo fator (MFA)",svc:"Implantação de MFA nos sistemas críticos",
+ t:"Para acessar e-mails e sistemas importantes, é exigido um segundo fator de autenticação?",h:"Código no celular ou aplicativo autenticador, além da senha.",
+ o:[["a","Não / não sei o que é isso",0,true],["b","Só algumas pessoas ou sistemas",2],["c","Sim, obrigatório para todos nos sistemas críticos",4]]},
+{id:"SG-04",p:"P1",short:"Atualizações de segurança",svc:"Gestão de patches e atualizações",
+ t:"Como são tratadas as atualizações de segurança (Windows, sistemas, rede)?",
+ o:[["a","Cada usuário atualiza quando quer / não sei",0,true],["b","Atualizamos quando algo dá problema",1],["c","Há rotina, sem controle formal",2],["d","Processo gerenciado, com verificação de pendências",4]]},
+{id:"SG-05",p:"P1",short:"Conscientização de usuários",svc:"Treinamento + simulação de phishing",
+ t:"Os colaboradores recebem orientação sobre golpes digitais?",h:"Phishing, e-mails falsos, engenharia social.",
+ o:[["a","Nunca",0],["b","Já houve comunicado pontual",1],["c","Orientações periódicas informais",2],["d","Treinamento recorrente e/ou simulações",4]]},
+{id:"SG-06",p:"P1",short:"Proteção de notebooks",svc:"Criptografia de disco + gestão remota de dispositivos",
+ t:"Se um notebook da empresa for roubado hoje, os dados nele estão protegidos?",
+ o:[["a","Não / não sei",0,true],["b","Apenas senha de login",1],["c","Sim, disco criptografado",3],["d","Criptografia + bloqueio/apagamento remoto",4]]},
+{id:"SG-07",p:"P1",short:"Plano contra ataques",svc:"Plano de resposta a incidentes documentado",
+ t:"Em um ataque cibernético, existe um responsável claro que seria acionado imediatamente, com um plano do que fazer?",
+ o:[["a","Não",0],["b","Sabemos quem chamar, mas sem plano definido",2],["c","Sim — responsável e plano documentado",4]]},
+
+/* ---------- P2 BACKUP & CONTINUIDADE ---------- */
+{id:"BK-01",p:"P2",short:"Existência de backup",svc:"Backup gerenciado (BaaS)",
+ t:"A empresa realiza backup dos dados e sistemas críticos?",
+ o:[["a","Não / não sei",0,true],["b","Sim, manual/esporádico",1],["c","Sim, automático diário",3],["d","Automático, múltiplas cópias e retenção definida",4]]},
+{id:"BK-02",p:"P2",short:"Cópia externa do backup",svc:"Backup em nuvem (regra 3-2-1)",
+ t:"Existe cópia do backup fora do prédio da empresa?",h:"Nuvem ou outro local físico.",
+ showIf:a=>a["BK-01"]&&a["BK-01"]!=="a", zeroIf:a=>a["BK-01"]==="a",
+ o:[["a","Não / não sei",0,true],["b","Sim, em nuvem ou local externo",3],["c","Sim, seguindo a regra 3-2-1",4]]},
+{id:"BK-03",p:"P2",short:"Teste de restauração",svc:"Rotina de testes de restore",
+ t:"Quando foi a última vez que testaram restaurar um backup de verdade?",
+ showIf:a=>a["BK-01"]&&a["BK-01"]!=="a", zeroIf:a=>a["BK-01"]==="a",
+ o:[["a","Nunca testamos / não sei",0,true],["b","Há mais de 1 ano",1],["c","Nos últimos 6 a 12 meses",3],["d","Testes periódicos programados",4]]},
+{id:"BK-04",p:"P2",short:"Backup à prova de ransomware",svc:"Cópia imutável / backup offline",
+ t:"O backup está protegido contra ransomware?",h:"Cópia imutável ou desconectada da rede — um ataque não consegue apagá-la.",
+ showIf:a=>a["BK-01"]&&a["BK-01"]!=="a", zeroIf:a=>a["BK-01"]==="a",
+ o:[["a","Não sei",0,true],["b","Não — o backup fica acessível na mesma rede",1],["c","Sim, cópia imutável/offline",4]]},
+{id:"BK-05",p:"P2",short:"Tempo de recuperação",svc:"Plano de recuperação com RTO definido",
+ t:"Se o sistema principal falhar totalmente, em quanto tempo a empresa volta a operar?",
+ showIf:a=>a["BK-01"]&&a["BK-01"]!=="a", zeroIf:a=>a["BK-01"]==="a",
+ o:[["a","Não faço ideia",0,true],["b","Dias",1],["c","Horas",3],["d","Tempo definido e testado em plano de recuperação",4]]},
+{id:"BK-06",p:"P2",short:"Plano de desastre",svc:"Plano de continuidade de negócios / DR",
+ t:"Existe um plano documentado do que fazer em um desastre (incêndio, ransomware, falha total)?",h:"Quem faz o quê, em que ordem.",
+ o:[["a","Não",0],["b","Está \"na cabeça\" de uma pessoa",1],["c","Documentado, mas nunca testado",2],["d","Documentado e testado ao menos 1x ao ano",4]]},
+
+/* ---------- P3 INFRAESTRUTURA ---------- */
+{id:"IF-01",p:"P3",short:"Reclamações de lentidão",svc:"Diagnóstico de performance",
+ t:"Com que frequência colaboradores reclamam de lentidão (sistemas, rede, computadores)?",
+ o:[["a","Diariamente",0],["b","Semanalmente",1],["c","Ocasionalmente",3],["d","Raramente / temos medições que comprovam",4]]},
+{id:"IF-02",p:"P3",short:"Idade dos computadores",svc:"Ciclo de renovação de equipamentos",
+ t:"Qual a idade média dos computadores em uso?",
+ o:[["a","Não sei",0,true],["b","Mais de 6 anos, sem plano de troca",1],["c","Mistura de idades — trocamos quando quebra",2],["d","Até 4-5 anos, com renovação planejada",4]]},
+{id:"IF-03",p:"P3",short:"Redundância de internet",svc:"Segundo link com failover automático",
+ t:"A internet possui redundância — um segundo link que assume automaticamente em caso de queda?",
+ o:[["a","Não / não sei",0,true],["b","Temos segundo link, mas a troca é manual",2],["c","Sim, failover automático",4]]},
+{id:"IF-04",p:"P3",short:"Proteção dos servidores locais",svc:"Projeto de alta disponibilidade",
+ t:"Os servidores locais possuem proteção contra falhas?",h:"Nobreak dimensionado, discos redundantes, equipamento reserva.",
+ showIf:a=>(a["PF-05"]||[]).includes("a"),
+ o:[["a","Não / não sei",0,true],["b","Apenas nobreak básico",1],["c","Nobreak + discos redundantes (RAID)",3],["d","Redundância completa (energia, discos, virtualização)",4]]},
+{id:"IF-05",p:"P3",short:"Qualidade da rede",svc:"Projeto de rede corporativa",
+ t:"A rede Wi-Fi e cabeada atende bem toda a operação?",
+ o:[["a","Há áreas sem sinal ou quedas constantes",0],["b","Funciona, mas com instabilidades frequentes",2],["c","Estável, equipamentos profissionais, rede separada p/ visitantes",4]]},
+
+/* ---------- P4 CAPACIDADE ---------- */
+{id:"CP-01",p:"P4",short:"Preparo para crescer",svc:"Assessment de arquitetura para escala",
+ t:"Se a empresa dobrasse de tamanho em 12 meses, a TI atual suportaria?",
+ o:[["a","Não faço ideia",0,true],["b","Não — teríamos que refazer muita coisa",1],["c","Parcialmente — alguns pontos travariam",2],["d","Sim — a estrutura foi pensada para crescer",4]]},
+{id:"CP-02",p:"P4",short:"Gestão de capacidade",svc:"Monitoramento de capacidade com alertas",
+ t:"Alguém acompanha o consumo de recursos (disco, licenças, servidores/nuvem) antes que acabem?",
+ o:[["a","Não — descobrimos quando estoura",0],["b","Olhamos de vez em quando",1],["c","Acompanhamento periódico informal",2],["d","Monitoramento com alertas e planejamento",4]]},
+{id:"CP-03",p:"P4",short:"Estratégia de nuvem",svc:"Assessment de migração para nuvem / FinOps",
+ t:"A empresa já avaliou levar sistemas para a nuvem (ou otimizar o que já está lá)?",
+ showIf:a=>{const s=a["PF-05"]||[];return !(s.includes("c")&&!s.includes("a")&&!s.includes("b"))},
+ o:[["a","Nunca avaliamos",1],["b","Avaliamos, mas não seguimos adiante",2],["c","Em migração / uso híbrido consciente",3],["d","Nuvem com gestão de custos e dimensionamento ativo",4]]},
+{id:"CP-04",p:"P4",short:"Onboarding de colaboradores",svc:"Automação de onboarding de acessos",
+ t:"Um novo colaborador: em quanto tempo tem computador, acessos e e-mail funcionando?",
+ o:[["a","Dias, sempre com improviso",0],["b","Alguns dias, caso a caso",1],["c","1 a 2 dias, com roteiro conhecido",3],["d","No mesmo dia, processo padronizado",4]]},
+
+/* ---------- P5 MONITORAMENTO ---------- */
+{id:"MN-01",p:"P5",short:"Quem descobre a falha",svc:"Monitoramento proativo 24x7 (NOC)",
+ t:"Quando um sistema ou serviço cai, quem geralmente descobre primeiro?",
+ o:[["a","Os clientes",0],["b","Os usuários internos, que reclamam",1],["c","A TI, quase junto com os usuários",2],["d","A TI, por alertas automáticos, antes de afetar alguém",4]]},
+{id:"MN-02",p:"P5",short:"Ferramenta de monitoramento",svc:"Implantação de monitoramento gerenciado",
+ t:"Existe alguma ferramenta de monitoramento do ambiente (servidores, links, sistemas)?",
+ showIf:a=>["a","b"].includes(a["MN-01"]),
+ o:[["a","Não / não sei",0,true],["b","Existe, mas ninguém acompanha",1],["c","Existe e é acompanhada em horário comercial",2]]},
+{id:"MN-03",p:"P5",short:"Alertas automáticos",svc:"Alertas 24x7 com escalonamento",
+ t:"O monitoramento gera alertas automáticos (WhatsApp, e-mail) para os responsáveis, inclusive fora do horário comercial?",
+ showIf:a=>["c","d"].includes(a["MN-01"])||["b","c"].includes(a["MN-02"]), zeroIf:a=>a["MN-02"]==="a",
+ o:[["a","Não",0],["b","Sim, mas só em horário comercial",2],["c","Sim, 24x7 com escalonamento definido",4]]},
+{id:"MN-04",p:"P5",short:"Relatórios para a diretoria",svc:"Relatório executivo mensal de saúde de TI",
+ t:"A diretoria recebe relatório periódico sobre a saúde da TI (disponibilidade, incidentes, riscos)?",
+ o:[["a","Nunca recebi nada",0],["b","Só quando algo grave acontece",1],["c","Relatórios eventuais, sem padrão",2],["d","Relatório mensal/trimestral com indicadores",4]]},
+{id:"MN-05",p:"P5",short:"Disponibilidade medida",svc:"Medição de disponibilidade por ferramenta",
+ t:"Vocês sabem, com dados, quanto tempo os sistemas críticos ficaram fora do ar no último trimestre?",
+ o:[["a","Não temos essa informação",0],["b","Temos noção, mas sem registro",1],["c","Sim, registrado por ferramenta de monitoramento",4]]},
+
+/* ---------- P6 GOVERNANÇA ---------- */
+{id:"GV-01",p:"P6",short:"Canal de suporte",svc:"Service desk com SLA",
+ t:"Quando um colaborador tem problema de TI, o que ele faz?",
+ o:[["a","Chama quem \"entende mais\" / WhatsApp para alguém",0],["b","Aciona a TI, sem registro formal",1],["c","Abre chamado em canal definido",3],["d","Abre chamado com prazos (SLA) acompanhados",4]]},
+{id:"GV-02",p:"P6",short:"Inventário de ativos",svc:"Inventário automatizado de ativos",
+ t:"Existe inventário atualizado de equipamentos, sistemas e licenças?",
+ showIf:a=>a["PF-04"]!=="d",
+ o:[["a","Não / não sei",0,true],["b","Planilha desatualizada",1],["c","Inventário manual em dia",3],["d","Inventário automatizado por ferramenta",4]]},
+{id:"GV-03",p:"P6",short:"Documentação do ambiente",svc:"Documentação + cofre de senhas",
+ t:"O ambiente está documentado (senhas de administrador, rede, configurações), sem depender da memória de uma pessoa?",
+ showIf:a=>a["PF-04"]!=="d",
+ o:[["a","Está tudo na cabeça de uma pessoa",0],["b","Documentação parcial e dispersa",1],["c","Documentado em local seguro e conhecido",3],["d","Documentado, com cofre de senhas e atualização contínua",4]]},
+{id:"GV-04",p:"P6",short:"Bloqueio de ex-funcionários",svc:"Processo de offboarding de acessos",
+ t:"Quando alguém é desligado, em quanto tempo todos os acessos dele são bloqueados?",
+ o:[["a","Não há processo — pode ficar ativo indefinidamente",0],["b","Bloqueamos \"quando lembramos\"",1],["c","Em até alguns dias, por processo com o RH",3],["d","No mesmo dia, por checklist formal",4]]},
+{id:"GV-05",p:"P6",short:"Orçamento e estratégia",svc:"Planejamento estratégico de TI",
+ t:"A TI tem orçamento próprio e participa das decisões estratégicas da empresa?",
+ o:[["a","Não — TI é vista só como custo quando algo quebra",0],["b","Gastos recorrentes, sem planejamento anual",1],["c","Orçamento anual definido",3],["d","Orçamento + TI no planejamento estratégico",4]]},
+{id:"GV-06",p:"P6",short:"SLA com fornecedores",svc:"Revisão de contratos e SLAs",
+ t:"Contratos com fornecedores críticos (internet, ERP, TI terceirizada) têm prazos de atendimento e penalidades definidos?",
+ showIf:a=>a["PF-04"]!=="d",
+ o:[["a","Não sei o que está nos contratos",0,true],["b","Contratos básicos, sem SLA",1],["c","SLA definido nos principais",3],["d","SLA definido e cobrado ativamente",4]]},
+
+/* ---------- LGPD (condicional) ---------- */
+{id:"LG-01",p:"LG",short:"Mapeamento de dados pessoais",svc:"Inventário de dados / adequação LGPD",
+ t:"A empresa mapeou quais dados pessoais/sensíveis coleta e onde ficam armazenados?",
+ showIf:a=>["d","e"].includes(a["PF-02"]),
+ o:[["a","Não / não sei",0,true],["b","Parcialmente",2],["c","Sim, com inventário de dados",4]]},
+{id:"LG-02",p:"LG",short:"Encarregado LGPD (DPO)",svc:"DPO as a Service",
+ t:"Existe um responsável pela adequação à LGPD (encarregado/DPO)?",
+ showIf:a=>["d","e"].includes(a["PF-02"]),
+ o:[["a","Não",0],["b","Alguém acumula informalmente",2],["c","Sim, formalmente designado",4]]},
+{id:"LG-03",p:"LG",short:"Controle de acesso a dados",svc:"Controle de acessos + trilha de auditoria",
+ t:"Acessos a dados sensíveis são restritos por perfil, com registro de quem acessou o quê?",
+ showIf:a=>["d","e"].includes(a["PF-02"]),
+ o:[["a","Não / não sei",0,true],["b","Restrição parcial, sem registro",2],["c","Sim, com controle e trilha de auditoria",4]]},
+
+/* ---------- FECHAMENTO ---------- */
+{id:"FC-01",p:"FC",t:"Qual destas frases melhor descreve sua maior preocupação com TI hoje?",
+ o:[["a","Medo de perder dados ou sofrer um ataque"],["b","Sistemas lentos ou instáveis atrapalhando a operação"],["c","Custo de TI alto sem clareza do retorno"],["d","Dependência de uma única pessoa/fornecedor"],["e","TI não acompanha o crescimento da empresa"],["f","Outra"]]},
+{id:"FC-02",p:"FC",open:true,t:"Se pudesse resolver UM problema de TI nos próximos 90 dias, qual seria?",h:"Escreva com suas palavras — é opcional, mas ajuda muito no diagnóstico."}
+];
+
+/* =====================================================================
+   ESTADO E FLUXO
+===================================================================== */
+const LEVELS=[
+ {min:0,max:20,name:"Inicial",color:"#C4453C",desc:"A TI é improvisada: sem processos, ferramentas ou responsáveis definidos. Os riscos existem, mas são invisíveis para a gestão."},
+ {min:21,max:40,name:"Reativo",color:"#D96B3B",desc:"A TI age quando algo quebra. Existem ferramentas básicas, mas falta prevenção — cada incidente custa mais do que deveria."},
+ {min:41,max:60,name:"Definido",color:"#D99A32",desc:"Processos existem e são conhecidos, mas a execução é inconsistente. Há lacunas importantes que aparecem nos momentos críticos."},
+ {min:61,max:80,name:"Gerenciado",color:"#3E8E5A",desc:"TI proativa, com processos medidos e testados. Este é o nível recomendado de mercado — o desafio agora é sustentá-lo."},
+ {min:81,max:100,name:"Otimizado",color:"#0E7C86",desc:"TI estratégica, com melhoria contínua e alinhamento total ao negócio. Poucas empresas chegam aqui."}
+];
+
+const answers={}, lead={};
+let idx=0;
+
+const $=id=>document.getElementById(id);
+const visibleList=()=>Q.filter(q=>!q.showIf||q.showIf(answers));
+
+function show(screen){
+  ["welcome","quiz","results"].forEach(s=>$("screen-"+s).classList.toggle("hidden",s!==screen));
+  window.scrollTo({top:0});
+}
+
+$("brand-name").textContent=CONFIG.brandName;
+$("brand-footer").textContent=CONFIG.brandName+" • "+new Date().getFullYear();
+
+$("btn-start").addEventListener("click",()=>{
+  lead.nome=$("f-nome").value.trim(); lead.empresa=$("f-empresa").value.trim();
+  lead.cargo=$("f-cargo").value.trim(); lead.email=$("f-email").value.trim();
+  if(!lead.nome||!lead.empresa){$("start-error").style.display="block";return;}
+  $("start-error").style.display="none";
+  show("quiz"); render();
+});
+
+function render(){
+  const list=visibleList();
+  if(idx>=list.length){finish();return;}
+  const q=list[idx];
+  $("q-pillar").textContent=PILLARS[q.p].name;
+  $("q-count").textContent=`Pergunta ${idx+1} de ${list.length}`;
+  $("q-progress").style.width=(idx/list.length*100)+"%";
+  $("q-text").textContent=q.t;
+  $("q-help").textContent=q.h||"";
+  $("q-help").style.display=q.h?"block":"none";
+  $("btn-back").style.visibility=idx===0?"hidden":"visible";
+  const box=$("q-opts"); box.innerHTML="";
+  const nextBtn=$("btn-next"); nextBtn.classList.add("hidden"); nextBtn.onclick=null;
+
+  if(q.open){
+    const ta=document.createElement("textarea");
+    ta.value=answers[q.id]||""; ta.placeholder="Digite aqui...";
+    box.appendChild(ta);
+    nextBtn.classList.remove("hidden");
+    nextBtn.textContent=idx+1>=list.length?"Ver meu resultado →":"Continuar →";
+    nextBtn.onclick=()=>{answers[q.id]=ta.value.trim(); idx++; render();};
+    ta.focus();
+    return;
+  }
+
+  if(q.multi){
+    const sel=new Set(answers[q.id]||[]);
+    q.o.forEach(([k,label])=>{
+      const b=mkOpt(k,label,sel.has(k));
+      b.onclick=()=>{sel.has(k)?sel.delete(k):sel.add(k); b.classList.toggle("selected");};
+      box.appendChild(b);
+    });
+    nextBtn.classList.remove("hidden"); nextBtn.textContent="Continuar →";
+    nextBtn.onclick=()=>{ if(sel.size===0) return; answers[q.id]=[...sel]; clearInvalid(); idx++; render(); };
+    return;
+  }
+
+  q.o.forEach(([k,label])=>{
+    const b=mkOpt(k,label,answers[q.id]===k);
+    b.onclick=()=>{
+      answers[q.id]=k; clearInvalid();
+      b.classList.add("selected");
+      setTimeout(()=>{idx++; render();},180);
+    };
+    box.appendChild(b);
+  });
+}
+
+function mkOpt(k,label,selected){
+  const b=document.createElement("button");
+  b.type="button"; b.className="opt"+(selected?" selected":"");
+  b.innerHTML=`<span class="key">${k.toUpperCase()}</span><span>${label}</span>`;
+  return b;
+}
+
+/* respostas de perguntas que deixaram de ser visíveis (mudança de cascata ao voltar) */
+function clearInvalid(){
+  const ids=new Set(visibleList().map(q=>q.id));
+  Object.keys(answers).forEach(id=>{ if(!ids.has(id)) delete answers[id]; });
+}
+
+$("btn-back").addEventListener("click",()=>{ if(idx>0){idx--; render();} });
+
+/* =====================================================================
+   CÁLCULO
+===================================================================== */
+function optPts(q,key){ const o=q.o.find(x=>x[0]===key); return o?(o[2]===true?0:(o[2]??0)):0; }
+function isDontKnow(q,key){ const o=q.o&&q.o.find(x=>x[0]===key); return !!(o&&(o[2]===true||o[3]===true)); }
+
+function compute(){
+  const lgActive=["d","e"].includes(answers["PF-02"]);
+  const pillarIds=["P1","P2","P3","P4","P5","P6"].concat(lgActive?["LG"]:[]);
+  const res={pillars:{},risks:[],dontKnow:[]};
+
+  pillarIds.forEach(pid=>{
+    let got=0,max=0;
+    Q.filter(q=>q.p===pid).forEach(q=>{
+      const suppressed=q.showIf&&!q.showIf(answers)&&!(q.zeroIf&&q.zeroIf(answers));
+      if(suppressed) return;
+      max+=4;
+      if(q.zeroIf&&q.zeroIf(answers)&&!(answers[q.id])){ res.risks.push(q); return; } // ausência da prática: 0 no máximo
+      const a=answers[q.id];
+      if(a===undefined){ return; }
+      const pts=optPts(q,a); got+=pts;
+      if(pts<=1) res.risks.push(q);
+      if(isDontKnow(q,a)) res.dontKnow.push(q);
+    });
+    res.pillars[pid]={score:max?Math.round(got/max*100):0};
+  });
+
+  let weights={};
+  pillarIds.forEach(pid=>weights[pid]=PILLARS[pid].weight);
+  if(lgActive){ ["P1","P2","P3","P4","P5","P6"].forEach(p=>weights[p]*=0.9); }
+  let overall=0; pillarIds.forEach(pid=>overall+=res.pillars[pid].score*weights[pid]);
+  res.overall=Math.round(overall);
+  res.level=LEVELS.find(l=>res.overall>=l.min&&res.overall<=l.max)||LEVELS[0];
+  res.lgActive=lgActive;
+  res.pillarIds=pillarIds;
+  return res;
+}
+
+/* =====================================================================
+   RESULTADOS
+===================================================================== */
+let chart=null, lastResult=null;
+
+function finish(){
+  const r=compute(); lastResult=r;
+  show("results");
+  $("r-score").textContent=r.overall;
+  const badge=$("r-level");
+  badge.textContent="Nível: "+r.level.name;
+  badge.style.background=r.level.color; badge.style.color="#fff";
+  $("r-title").textContent=`${lead.empresa}: maturidade de TI no nível ${r.level.name}`;
+  $("r-desc").textContent=r.level.desc;
+
+  /* radar */
+  const labels=r.pillarIds.map(p=>PILLARS[p].short);
+  const data=r.pillarIds.map(p=>r.pillars[p].score);
+  const bench=r.pillarIds.map(()=>CONFIG.benchmark);
+  if(chart) chart.destroy();
+  chart=new Chart($("radar"),{
+    type:"radar",
+    data:{labels,datasets:[
+      {label:"Sua empresa",data,fill:true,backgroundColor:"rgba(196,69,60,.18)",borderColor:"#C4453C",pointBackgroundColor:"#C4453C",borderWidth:2},
+      {label:"Nível recomendado",data:bench,fill:false,borderColor:"#3E8E5A",borderDash:[6,5],pointRadius:0,borderWidth:2}
+    ]},
+    options:{responsive:true,scales:{r:{min:0,max:100,ticks:{stepSize:25,backdropColor:"transparent",font:{size:11}},
+      pointLabels:{font:{size:12,weight:"600",family:"IBM Plex Sans"}},grid:{color:"#DBE3E6"},angleLines:{color:"#DBE3E6"}}},
+      plugins:{legend:{display:false}}}
+  });
+
+  /* barras por pilar */
+  const bars=$("r-bars"); bars.innerHTML="";
+  r.pillarIds.forEach(pid=>{
+    const s=r.pillars[pid].score;
+    const lv=LEVELS.find(l=>s>=l.min&&s<=l.max);
+    bars.insertAdjacentHTML("beforeend",
+      `<div class="pillar-row"><span class="pname">${PILLARS[pid].name}</span>
+       <span class="bar"><i style="width:${s}%;background:${lv.color}"></i></span>
+       <span class="pscore" style="color:${lv.color}">${s}</span></div>`);
+  });
+
+  /* descompasso crítico (PF-03 x continuidade/monitoramento) */
+  const crit=["a","b"].includes(answers["PF-03"]) && (r.pillars.P2.score<60||r.pillars.P5.score<60);
+  $("r-critical-card").style.display=crit?"block":"none";
+  if(crit){
+    $("r-critical").innerHTML=`Você indicou que a operação <strong>para em ${answers["PF-03"]==="a"?"minutos":"poucas horas"}</strong> sem sistemas — mas sua capacidade de recuperação (Continuidade: ${r.pillars.P2.score}) ${r.pillars.P5.score<60?`e sua visibilidade do ambiente (Monitoramento: ${r.pillars.P5.score}) `:""}está abaixo do necessário para esse nível de dependência. <strong>Este é o descompasso mais crítico identificado.</strong>`;
+  }
+
+  /* riscos */
+  const risksBox=$("r-risks"); risksBox.innerHTML="";
+  const uniq=[...new Map(r.risks.filter(q=>q.short).map(q=>[q.id,q])).values()];
+  $("r-risks-sub").textContent=uniq.length
+    ?`Pontos com nota crítica (0–1) nas suas respostas — cada item indica a ação recomendada.`
+    :`Nenhum ponto crítico identificado nas respostas fornecidas.`;
+  if(!uniq.length){
+    risksBox.innerHTML=`<div class="okbox">Excelente resultado. A recomendação agora é validar essas práticas com uma verificação técnica e manter a rotina de melhoria contínua.</div>`;
+  }else{
+    uniq.slice(0,8).forEach(q=>{
+      risksBox.insertAdjacentHTML("beforeend",
+        `<div class="risk"><div><div class="rtitle">${q.short}</div><div class="rsvc">Ação recomendada: ${q.svc}</div></div></div>`);
+    });
+    if(uniq.length>8) risksBox.insertAdjacentHTML("beforeend",`<p class="hint">+ ${uniq.length-8} outros pontos detalhados na devolutiva.</p>`);
+  }
+
+  /* não sei */
+  const dk=$("r-dontknow"); dk.innerHTML="";
+  const dkUniq=[...new Set(r.dontKnow.map(q=>q.short).filter(Boolean))];
+  if(dkUniq.length>=3){
+    dk.innerHTML=`<div class="alertbox" style="border-color:#EAD9B8;background:#FBF4E6"><strong style="color:#9A6A12">Ponto de atenção:</strong> ${dkUniq.length} respostas foram "não sei" (${dkUniq.slice(0,4).join(", ")}${dkUniq.length>4?"...":""}). A falta de visibilidade da direção sobre a TI é, por si só, um risco de gestão — recomendamos uma verificação técnica presencial.</div>`;
+  }
+
+  /* prioridade declarada */
+  const prio={a:"Medo de perder dados ou sofrer um ataque",b:"Sistemas lentos ou instáveis",c:"Custo de TI alto sem clareza do retorno",d:"Dependência de uma única pessoa/fornecedor",e:"TI não acompanha o crescimento",f:"Outra"}[answers["FC-01"]];
+  const free=answers["FC-02"];
+  if(prio||free){
+    $("r-priority-card").style.display="block";
+    $("r-priority").innerHTML=(prio?`<div class="quotebox"><b>Sua maior preocupação</b>${prio}</div>`:"")+
+      (free?`<div class="quotebox"><b>Prioridade para os próximos 90 dias</b>"${free}"</div>`:"");
+  }
+
+  sendWebhook(r);
+}
+
+/* =====================================================================
+   ENVIO / EXPORTAÇÃO
+===================================================================== */
+function payload(r){
+  return {
+    data:new Date().toISOString(), lead, respostas:answers,
+    notaGeral:r.overall, nivel:r.level.name,
+    pilares:Object.fromEntries(r.pillarIds.map(p=>[PILLARS[p].name,r.pillars[p].score])),
+    riscos:[...new Set(r.risks.map(q=>q.short).filter(Boolean))]
+  };
+}
+
+function sendWebhook(r){
+  if(!CONFIG.webhookUrl) return;
+  fetch(CONFIG.webhookUrl,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(payload(r))})
+    .then(()=>$("send-status").textContent="✓ Respostas enviadas para "+CONFIG.brandName+".")
+    .catch(()=>$("send-status").textContent="Não foi possível enviar automaticamente — use os botões acima para compartilhar o relatório.");
+}
+
+$("btn-json").addEventListener("click",()=>{
+  if(!lastResult) return;
+  const blob=new Blob([JSON.stringify(payload(lastResult),null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`assessment-ti-${(lead.empresa||"empresa").toLowerCase().replace(/\s+/g,"-")}.json`;
+  a.click();
+});
+
+$("btn-contact").addEventListener("click",()=>{
+  const r=lastResult; if(!r) return;
+  const resumo=`Assessment de TI - ${lead.empresa}%0ANota geral: ${r.overall}/100 (${r.level.name})%0A`+
+    r.pillarIds.map(p=>`${PILLARS[p].short}: ${r.pillars[p].score}`).join("%0A")+
+    `%0A%0AContato: ${lead.nome}${lead.cargo?" - "+lead.cargo:""}${lead.email?" - "+lead.email:""}`;
+  if(CONFIG.whatsapp){
+    window.open(`https://wa.me/${CONFIG.whatsapp}?text=${resumo.replace(/%0A/g,"%0A")}`,"_blank");
+  }else{
+    window.location.href=`mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent("Devolutiva do Assessment de TI - "+lead.empresa)}&body=${resumo}`;
+  }
+});
+</script>
+</body>
+</html>

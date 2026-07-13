@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Brand Colors */
+  --color-brand-blue: #1c57e5;
+  --color-brand-orange: #ff8a00;
+  --color-brand-dark: #010B31;
+
+  /* Semantic aliases */
+  --color-primary: #1c57e5;
+  --color-primary-hover: #1648c4;
+  --color-primary-light: #e8effd;
+  --color-accent: #ff8a00;
+  --color-accent-hover: #e67a00;
+  --color-dark: #010B31;
+  --color-dark-light: #0a1a4d;
+}
