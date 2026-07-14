@@ -24,6 +24,9 @@ const RulesController = () => import('#controllers/rules_controller')
 const ChecklistItemsController = () => import('#controllers/checklist_items_controller')
 const ScoreRangesController = () => import('#controllers/score_ranges_controller')
 const AiQuestionController = () => import('#controllers/ai_question_controller')
+const InsightController = () => import('#controllers/admin/insight_controller')
+const InteractionHistoryController = () => import('#controllers/admin/interaction_history_controller')
+const AiPromptConfigController = () => import('#controllers/admin/ai_prompt_config_controller')
 
 const PublicSurveyController = () => import('#controllers/public/survey_controller')
 const AnswerController = () => import('#controllers/public/answer_controller')
@@ -149,6 +152,18 @@ router
         // ──────────────────────────────────────────────────────────────────────
         router.post('/surveys/:id/ai/generate-questions', [AiQuestionController, 'generate'])
         router.post('/surveys/:id/ai/confirm-questions', [AiQuestionController, 'confirm'])
+
+        // ──────────────────────────────────────────────────────────────────────
+        // AI Agent Insights (ai-agent-insights spec)
+        // ──────────────────────────────────────────────────────────────────────
+        router.post('/insights/survey', [InsightController, 'generateSurvey'])
+        router.get('/insights/survey/:surveyId', [InsightController, 'showSurvey'])
+        router.post('/insights/client', [InsightController, 'generateClient'])
+        router.get('/insights/client/:responseId', [InsightController, 'showClient'])
+        router.get('/responses/:responseId/interactions', [InteractionHistoryController, 'index'])
+        router.post('/responses/:responseId/interactions', [InteractionHistoryController, 'store'])
+        router.get('/ai-config/prompts', [AiPromptConfigController, 'show'])
+        router.put('/ai-config/prompts', [AiPromptConfigController, 'update'])
       })
       .use([middleware.auth(), middleware.ensureAdminActive()])
   })

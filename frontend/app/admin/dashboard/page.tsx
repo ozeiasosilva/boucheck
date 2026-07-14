@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { dashboardApi, surveysApi, type DashboardData, type Survey, AdminApiError } from '@/lib/admin/api'
+import { dashboardApi, surveysApi, insightsApi, type DashboardData, type Survey, type InsightResult, AdminApiError } from '@/lib/admin/api'
 import { StatCard, Card, CardHeader, CardBody } from '@/components/admin/ui/card'
 import { Select } from '@/components/admin/ui/input'
 import { Button } from '@/components/admin/ui/button'
+import { InsightButton } from '@/components/admin/insight-button'
+import { InsightCard } from '@/components/admin/insight-card'
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10)
@@ -34,10 +36,47 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [insightLoading, setInsightLoading] = useState(false)
+  const [insight, setInsight] = useState<InsightResult | null>(null)
+  const [insightError, setInsightError] = useState('')
 
   useEffect(() => {
     surveysApi.list().then(setSurveys).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (surveyId === 'all') {
+      setInsight(null)
+      setInsightError('')
+      return
+    }
+    insightsApi.getSurvey(Number(surveyId))
+      .then((result) => setInsight(result))
+      .catch(() => setInsight(null))
+  }, [surveyId])
+
+  const handleGenerateInsight = async () => {
+    setInsightLoading(true)
+    setInsightError('')
+    try {
+      const result = await insightsApi.generateSurvey(Number(surveyId))
+      setInsight(result)
+    } catch (err) {
+      if (err instanceof AdminApiError) {
+        if (err.status === 504) {
+          setInsightError('Tempo limite excedido. O agente de IA não respondeu a tempo. Tente novamente.')
+        } else if (err.status === 502) {
+          setInsightError('Erro de comunicação com o agente de IA. Tente novamente.')
+        } else {
+          setInsightError(err.message)
+        }
+      } else {
+        setInsightError('Erro ao gerar insight. Tente novamente.')
+      }
+    } finally {
+      setInsightLoading(false)
+    }
+  }
 
   const loadDashboard = useCallback(async () => {
     setLoading(true)
@@ -110,6 +149,20 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {surveyId !== 'all' && (
+        <div className="mb-6">
+          <InsightButton
+            onClick={handleGenerateInsight}
+            loading={insightLoading}
+            disabled={data?.totals.completed === 0}
+          />
+          {insightError && (
+            <p className="mt-2 text-sm text-red-600">{insightError}</p>
+          )}
+          {insight && <InsightCard conteudo={insight.conteudo} createdAt={insight.created_at} />}
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">

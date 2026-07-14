@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { responsesApi, type ResponseDetail, AdminApiError } from '@/lib/admin/api'
+import { responsesApi, insightsApi, type ResponseDetail, type InsightResult, AdminApiError } from '@/lib/admin/api'
 import { Button } from '@/components/admin/ui/button'
 import { ResponseStatusBadge } from '@/components/admin/ui/badge'
 import { Card, CardHeader, CardBody } from '@/components/admin/ui/card'
 import { useToast } from '@/components/admin/ui/toast'
+import { InsightButton } from '@/components/admin/insight-button'
+import { InsightCard } from '@/components/admin/insight-card'
+import { InteractionHistorySection } from '@/components/admin/interaction-history-section'
 
 function fmtDate(d: string | null) {
   if (!d) return '—'
@@ -36,6 +39,9 @@ export default function ResponseDetailPage() {
   const [loading, setLoading] = useState(true)
   const [resending, setResending] = useState(false)
   const [anonymizing, setAnonymizing] = useState(false)
+  const [insightLoading, setInsightLoading] = useState(false)
+  const [insight, setInsight] = useState<InsightResult | null>(null)
+  const [insightError, setInsightError] = useState<string | null>(null)
 
   useEffect(() => {
     responsesApi.get(id)
@@ -43,6 +49,36 @@ export default function ResponseDetailPage() {
       .catch(() => toast('Erro ao carregar resposta.', 'error'))
       .finally(() => setLoading(false))
   }, [id, toast])
+
+  useEffect(() => {
+    if (detail && !detail.anonimizado) {
+      insightsApi.getClient(detail.id).then(setInsight).catch(() => {})
+    }
+  }, [detail])
+
+  async function handleGenerateInsight() {
+    if (!detail) return
+    setInsightLoading(true)
+    setInsightError(null)
+    try {
+      const result = await insightsApi.generateClient(detail.id)
+      setInsight(result)
+    } catch (err) {
+      if (err instanceof AdminApiError) {
+        if (err.status === 504) {
+          setInsightError('Tempo limite excedido. Tente novamente.')
+        } else if (err.status === 502) {
+          setInsightError('Falha na comunicação com o serviço de IA.')
+        } else {
+          setInsightError(err.message)
+        }
+      } else {
+        setInsightError('Erro ao gerar insight. Tente novamente.')
+      }
+    } finally {
+      setInsightLoading(false)
+    }
+  }
 
   async function handleResend(channel?: 'email' | 'whatsapp') {
     setResending(true)
@@ -160,6 +196,21 @@ export default function ResponseDetailPage() {
           )}
         </CardBody>
       </Card>
+
+      {/* Insight & Interaction History (hidden when anonymized) */}
+      {!detail.anonimizado && (
+        <>
+          <div className="space-y-4">
+            <InsightButton
+              onClick={handleGenerateInsight}
+              loading={insightLoading}
+            />
+            {insightError && <p className="mt-2 text-sm text-red-600">{insightError}</p>}
+            {insight && <InsightCard conteudo={insight.conteudo} createdAt={insight.created_at} />}
+          </div>
+          <InteractionHistorySection responseId={detail.id} />
+        </>
+      )}
 
       {/* Checklist */}
       {detail.checklist.length > 0 && (

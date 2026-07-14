@@ -507,3 +507,50 @@ export const dashboardApi = {
     return apiFetch<DashboardData>(`/dashboard?${params.toString()}`)
   },
 }
+
+// ─── AI Insights ──────────────────────────────────────────────────────────────
+
+export interface InsightResult {
+  id: number
+  conteudo: string
+  tokens_input: number | null
+  tokens_output: number | null
+  created_at: string
+}
+
+export interface InteractionEntry {
+  id: number
+  tipo: string
+  observacao: string | null
+  admin_user_id: number
+  created_at: string
+}
+
+export interface PaginatedInteractions {
+  data: InteractionEntry[]
+  meta: { total: number; perPage: number; currentPage: number; lastPage: number }
+}
+
+export interface PromptsConfig {
+  survey_agent: { conteudo: string | null; is_default: boolean }
+  client_agent: { conteudo: string | null; is_default: boolean }
+}
+
+export const insightsApi = {
+  generateSurvey: (surveyId: number) =>
+    apiFetch<InsightResult>('/insights/survey', { method: 'POST', body: JSON.stringify({ survey_id: surveyId }) }),
+  getSurvey: (surveyId: number) =>
+    apiFetch<InsightResult | null>(`/insights/survey/${surveyId}`),
+  generateClient: (responseId: string) =>
+    apiFetch<InsightResult>('/insights/client', { method: 'POST', body: JSON.stringify({ response_id: responseId }) }),
+  getClient: (responseId: string) =>
+    apiFetch<InsightResult | null>(`/insights/client/${responseId}`),
+  getInteractions: (responseId: string, page: number = 1) =>
+    apiFetch<PaginatedInteractions>(`/responses/${responseId}/interactions?page=${page}`),
+  createInteraction: (responseId: string, data: { tipo: string; observacao?: string }) =>
+    apiFetch<InteractionEntry>(`/responses/${responseId}/interactions`, { method: 'POST', body: JSON.stringify(data) }),
+  getPrompts: () =>
+    apiFetch<PromptsConfig>('/ai-config/prompts'),
+  updatePrompts: (data: { survey_agent_prompt?: string; client_agent_prompt?: string }) =>
+    apiFetch<{ message: string }>('/ai-config/prompts', { method: 'PUT', body: JSON.stringify(data) }),
+}
