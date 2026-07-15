@@ -6,6 +6,7 @@ import authService, {
   TokenError,
   PolicyError,
 } from '../services/auth_service.js'
+import AdminUser from '#models/admin_user'
 
 export default class AuthController {
   /**
@@ -73,5 +74,20 @@ export default class AuthController {
       }
       throw error
     }
+  }
+
+  /**
+   * POST /api/admin/auth/logout
+   *
+   * Invalidates the current access token, ending the session server-side.
+   * Requires authenticated user (inside protected route group).
+   * - 200 { message: "Logged out" }
+   *
+   * Validates: Requirements 1.1, 1.2, 1.3
+   */
+  async logout({ auth, response }: HttpContext) {
+    const user = auth.user!
+    await AdminUser.accessTokens.delete(user, user.currentAccessToken.identifier)
+    return response.ok({ message: 'Logged out' })
   }
 }

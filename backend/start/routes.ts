@@ -77,6 +77,8 @@ router
     // ──────────────────────────────────────────────────────────────────────────
     router
       .group(() => {
+        router.post('/auth/logout', [AuthController, 'logout'])
+
         router.put('/me/password', [MeController, 'changePassword'])
         router.get('/me', [MeController, 'show'])
         router.put('/me/tema', [MeController, 'setTheme'])

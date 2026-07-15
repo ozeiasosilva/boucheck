@@ -28,6 +28,9 @@ function LoginForm() {
   const [forgotLoading, setForgotLoading] = useState(false)
   const [forgotError, setForgotError] = useState('')
 
+  // 12 hours — matches backend token TTL
+  const SESSION_MAX_AGE = 60 * 60 * 12
+
   async function handleLogin(e: FormEvent) {
     e.preventDefault()
     setLoginError('')
@@ -37,7 +40,7 @@ function LoginForm() {
     try {
       const result = await authApi.login(email, password)
       // Set cookie for middleware (not httpOnly — SPA approach)
-      document.cookie = `boucheck_admin_session=${result.token.value}; path=/; max-age=${60 * 60 * 12}; samesite=lax`
+      document.cookie = `boucheck_admin_session=${result.token.value}; path=/; max-age=${SESSION_MAX_AGE}; samesite=lax`
       login(result.token.value)
 
       const next = searchParams.get('next') || '/admin/dashboard'

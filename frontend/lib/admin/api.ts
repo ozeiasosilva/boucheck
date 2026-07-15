@@ -38,6 +38,10 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY)
 }
 
+export function clearSessionCookie(): void {
+  document.cookie = 'boucheck_admin_session=; path=/; max-age=0; samesite=lax'
+}
+
 // ─── Core fetch ───────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(
@@ -65,6 +69,14 @@ async function apiFetch<T>(
   const data = await res.json().catch(() => ({}))
 
   if (!res.ok) {
+    // Interceptor 401: limpa sessão e redireciona
+    if (res.status === 401 && authenticated && path !== '/auth/logout') {
+      clearToken()
+      clearSessionCookie()
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/admin/login')) {
+        window.location.href = '/admin/login'
+      }
+    }
     throw new AdminApiError(res.status, data)
   }
 
@@ -253,6 +265,9 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }, false),
+
+  logout: () =>
+    apiFetch<{ message: string }>('/auth/logout', { method: 'POST' }),
 
   forgot: (email: string) =>
     apiFetch<{ message: string }>('/auth/forgot', {
