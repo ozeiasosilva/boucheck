@@ -57,6 +57,11 @@ export class BackendStack extends Stack {
       description: 'SQS Job Queue URL',
     });
 
+    const sqsMailQueueUrl = new CfnParameter(this, 'SqsMailQueueUrl', {
+      type: 'String',
+      description: 'SQS Mail Queue URL (transactional emails)',
+    });
+
     const s3LogosBucket = new CfnParameter(this, 'S3LogosBucket', {
       type: 'String',
       default: 'boucheck-logos',
@@ -149,6 +154,7 @@ export class BackendStack extends Stack {
           's3:PutObject',
           's3:DeleteObject',
           's3:ListBucket',
+          's3:GetBucketPublicAccessBlock',
         ],
         resources: [
           `arn:aws:s3:::${s3LogosBucket.valueAsString}`,
@@ -208,6 +214,7 @@ export class BackendStack extends Stack {
         DB_PASSWORD: dbPassword.valueAsString,
         DB_DATABASE: dbDatabase.valueAsString,
         SQS_REPORTING_QUEUE_URL: sqsQueueUrl.valueAsString,
+        SQS_MAIL_QUEUE_URL: sqsMailQueueUrl.valueAsString,
         S3_LOGOS_BUCKET: s3LogosBucket.valueAsString,
         S3_REPORTS_BUCKET: s3ReportsBucket.valueAsString,
         AWS_REGION: awsRegion.valueAsString,
@@ -282,6 +289,7 @@ export class BackendStack extends Stack {
         DB_PASSWORD: dbPassword.valueAsString,
         DB_DATABASE: dbDatabase.valueAsString,
         SQS_REPORTING_QUEUE_URL: sqsQueueUrl.valueAsString,
+        SQS_MAIL_QUEUE_URL: sqsMailQueueUrl.valueAsString,
         S3_LOGOS_BUCKET: s3LogosBucket.valueAsString,
         S3_REPORTS_BUCKET: s3ReportsBucket.valueAsString,
         AWS_REGION: awsRegion.valueAsString,
