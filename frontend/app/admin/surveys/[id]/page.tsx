@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useCallback, type FormEvent } from 'react'
 import { useParams } from 'next/navigation'
 import { surveysApi, categoriesApi, type Survey, type Category, AdminApiError } from '@/lib/admin/api'
 import { Button } from '@/components/admin/ui/button'
 import { Input, Textarea, Select } from '@/components/admin/ui/input'
+import { Toggle } from '@/components/admin/ui/toggle'
 import { useToast } from '@/components/admin/ui/toast'
+
+type ButtonConfigField = 'mostrar_btn_relatorio' | 'mostrar_btn_email' | 'mostrar_btn_whatsapp' | 'mostrar_btn_consultor'
 
 export default function SurveyGeneralPage() {
   const { id } = useParams<{ id: string }>()
@@ -15,6 +18,21 @@ export default function SurveyGeneralPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState(false)
+
+  // Button config state (managed independently from main form)
+  const [buttonConfig, setButtonConfig] = useState({
+    mostrar_btn_relatorio: true,
+    mostrar_btn_email: true,
+    mostrar_btn_whatsapp: true,
+    mostrar_btn_consultor: true,
+  })
+  const [savingToggles, setSavingToggles] = useState<Record<ButtonConfigField, boolean>>({
+    mostrar_btn_relatorio: false,
+    mostrar_btn_email: false,
+    mostrar_btn_whatsapp: false,
+    mostrar_btn_consultor: false,
+  })
 
   const [form, setForm] = useState({
     nome: '',
@@ -25,6 +43,7 @@ export default function SurveyGeneralPage() {
     link_agendamento: '',
     email_notificacao: '',
     usar_ia_no_relatorio: false,
+    telefone_whatsapp: '',
   })
 
   useEffect(() => {
@@ -42,11 +61,43 @@ export default function SurveyGeneralPage() {
         tempo_estimado_min: s.tempo_estimado_min ? String(s.tempo_estimado_min) : '',
         link_agendamento: s.link_agendamento ?? '',
         email_notificacao: s.email_notificacao ?? '',
-        usar_ia_no_relatorio: s.usar_ia_no_relatorio,
+        usar_ia_no_relatorio: s.usar_ia_no_relatorio ?? false,
+        telefone_whatsapp: s.telefone_whatsapp ?? '',
       })
-    }).catch(() => toast('Erro ao carregar survey.', 'error'))
+      setButtonConfig({
+        mostrar_btn_relatorio: s.mostrar_btn_relatorio ?? true,
+        mostrar_btn_email: s.mostrar_btn_email ?? true,
+        mostrar_btn_whatsapp: s.mostrar_btn_whatsapp ?? true,
+        mostrar_btn_consultor: s.mostrar_btn_consultor ?? true,
+      })
+      setLoadError(false)
+    }).catch(() => {
+      toast('Erro ao carregar survey.', 'error')
+      setLoadError(true)
+    })
       .finally(() => setLoading(false))
   }, [id, toast])
+
+  const handleToggleChange = useCallback(async (field: ButtonConfigField, newValue: boolean) => {
+    // Store previous state for rollback
+    const previousValue = buttonConfig[field]
+
+    // Optimistic update
+    setButtonConfig((prev) => ({ ...prev, [field]: newValue }))
+    setSavingToggles((prev) => ({ ...prev, [field]: true }))
+
+    try {
+      const updated = await surveysApi.update(Number(id), { [field]: newValue })
+      setSurvey(updated)
+      toast('Configuração salva!', 'success')
+    } catch {
+      // Revert to previous state on failure
+      setButtonConfig((prev) => ({ ...prev, [field]: previousValue }))
+      toast('Erro ao salvar configuração. Tente novamente.', 'error')
+    } finally {
+      setSavingToggles((prev) => ({ ...prev, [field]: false }))
+    }
+  }, [buttonConfig, id, toast])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -62,6 +113,7 @@ export default function SurveyGeneralPage() {
         link_agendamento: form.link_agendamento || null,
         email_notificacao: form.email_notificacao || null,
         usar_ia_no_relatorio: form.usar_ia_no_relatorio,
+        telefone_whatsapp: form.telefone_whatsapp || null,
       })
       setSurvey(updated)
       toast('Survey salvo!', 'success')
@@ -156,6 +208,54 @@ export default function SurveyGeneralPage() {
           Usar IA para gerar recomendações personalizadas no relatório
         </span>
       </label>
+
+      {/* Botões de conclusão da pesquisa */}
+      <fieldset className="rounded-lg border border-gray-200 p-4 space-y-3">
+        <legend className="px-2 text-sm font-medium text-gray-700">
+          Botões na tela de conclusão
+        </legend>
+        {loadError ? (
+          <p className="text-sm text-red-600">Falha ao carregar configurações de botões</p>
+        ) : (
+          <>
+            <Toggle
+              label="Visualizar relatório"
+              checked={buttonConfig.mostrar_btn_relatorio}
+              onChange={(checked) => handleToggleChange('mostrar_btn_relatorio', checked)}
+              disabled={savingToggles.mostrar_btn_relatorio}
+            />
+            <Toggle
+              label="Receber relatório por e-mail"
+              checked={buttonConfig.mostrar_btn_email}
+              onChange={(checked) => handleToggleChange('mostrar_btn_email', checked)}
+              disabled={savingToggles.mostrar_btn_email}
+            />
+            <Toggle
+              label="Receber relatório por WhatsApp"
+              checked={buttonConfig.mostrar_btn_whatsapp}
+              onChange={(checked) => handleToggleChange('mostrar_btn_whatsapp', checked)}
+              disabled={savingToggles.mostrar_btn_whatsapp}
+            />
+            <Toggle
+              label="Falar com um consultor"
+              checked={buttonConfig.mostrar_btn_consultor}
+              onChange={(checked) => handleToggleChange('mostrar_btn_consultor', checked)}
+              disabled={savingToggles.mostrar_btn_consultor}
+            />
+            {buttonConfig.mostrar_btn_consultor && (
+              <div className="ml-6 mt-1">
+                <Input
+                  label="Telefone WhatsApp do consultor"
+                  value={form.telefone_whatsapp}
+                  onChange={(e) => setForm((f) => ({ ...f, telefone_whatsapp: e.target.value }))}
+                  placeholder="5511999999999"
+                  hint="Número com DDI+DDD, sem espaços ou símbolos. Ex: 5511999999999"
+                />
+              </div>
+            )}
+          </>
+        )}
+      </fieldset>
 
       {/* Survey status info */}
       {survey && (

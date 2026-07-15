@@ -113,6 +113,20 @@ export default class ReportActionController {
       to_phone: phone,
     })
 
+    // Set solicitou_whatsapp flag (Req 6.2)
+    session.solicitouWhatsapp = true
+    await session.save()
+
+    // Enqueue consultant notification if email_notificacao is configured (Req 7.1, 7.5)
+    const survey = await Survey.find(session.surveyId)
+    if (survey?.emailNotificacao) {
+      await reportingQueue.enqueue({
+        kind: 'consultant_whatsapp_notify',
+        response_id: session.id,
+        to_email: survey.emailNotificacao,
+      })
+    }
+
     return response.ok({})
   }
 

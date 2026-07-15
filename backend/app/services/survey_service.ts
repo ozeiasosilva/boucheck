@@ -4,7 +4,7 @@ import QuestionOption from '#models/question_option'
 import QuestionRule from '#models/question_rule'
 import ChecklistItem from '#models/checklist_item'
 import Response from '#models/response'
-import type { SurveyStatus, ConfigVisual } from '#models/types'
+import type { SurveyStatus, ConfigVisual, SurveyTema } from '#models/types'
 import {
   uploadLogo as uploadLogoHelper,
   InvalidLogoTypeError,
@@ -104,6 +104,7 @@ export interface CreateSurveyInput {
   link_agendamento?: string
   email_notificacao?: string
   usar_ia_no_relatorio?: boolean
+  telefone_whatsapp?: string | null
 }
 
 export interface UpdateSurveyInput {
@@ -114,6 +115,12 @@ export interface UpdateSurveyInput {
   tempo_estimado_min?: number
   link_agendamento?: string
   email_notificacao?: string
+  usar_ia_no_relatorio?: boolean
+  mostrar_btn_relatorio?: boolean
+  mostrar_btn_email?: boolean
+  mostrar_btn_whatsapp?: boolean
+  mostrar_btn_consultor?: boolean
+  telefone_whatsapp?: string | null
 }
 
 export interface StructureChangeOptions {
@@ -132,6 +139,12 @@ export interface SurveyView {
   link_agendamento: string | null
   email_notificacao: string | null
   config_visual: ConfigVisual | null
+  usar_ia_no_relatorio: boolean
+  mostrar_btn_relatorio: boolean
+  mostrar_btn_email: boolean
+  mostrar_btn_whatsapp: boolean
+  mostrar_btn_consultor: boolean
+  telefone_whatsapp: string | null
   created_at: string | null
   updated_at: string | null
 }
@@ -149,6 +162,12 @@ function toView(survey: Survey): SurveyView {
     link_agendamento: survey.linkAgendamento,
     email_notificacao: survey.emailNotificacao,
     config_visual: survey.configVisual,
+    usar_ia_no_relatorio: survey.usarIaNoRelatorio,
+    mostrar_btn_relatorio: survey.mostrarBtnRelatorio,
+    mostrar_btn_email: survey.mostrarBtnEmail,
+    mostrar_btn_whatsapp: survey.mostrarBtnWhatsapp,
+    mostrar_btn_consultor: survey.mostrarBtnConsultor,
+    telefone_whatsapp: survey.telefoneWhatsapp ?? null,
     created_at: survey.createdAt?.toISO() ?? null,
     updated_at: survey.updatedAt?.toISO() ?? null,
   }
@@ -174,6 +193,7 @@ export class SurveyService {
       linkAgendamento: input.link_agendamento ?? null,
       emailNotificacao: input.email_notificacao ?? null,
       usarIaNoRelatorio: input.usar_ia_no_relatorio ?? false,
+      telefoneWhatsapp: input.telefone_whatsapp ?? null,
     })
 
     return toView(survey)
@@ -209,6 +229,12 @@ export class SurveyService {
     if (input.tempo_estimado_min !== undefined) survey.tempoEstimadoMin = input.tempo_estimado_min ?? null
     if (input.link_agendamento !== undefined) survey.linkAgendamento = input.link_agendamento ?? null
     if (input.email_notificacao !== undefined) survey.emailNotificacao = input.email_notificacao ?? null
+    if (input.usar_ia_no_relatorio !== undefined) survey.usarIaNoRelatorio = input.usar_ia_no_relatorio
+    if (input.mostrar_btn_relatorio !== undefined) survey.mostrarBtnRelatorio = input.mostrar_btn_relatorio
+    if (input.mostrar_btn_email !== undefined) survey.mostrarBtnEmail = input.mostrar_btn_email
+    if (input.mostrar_btn_whatsapp !== undefined) survey.mostrarBtnWhatsapp = input.mostrar_btn_whatsapp
+    if (input.mostrar_btn_consultor !== undefined) survey.mostrarBtnConsultor = input.mostrar_btn_consultor
+    if (input.telefone_whatsapp !== undefined) survey.telefoneWhatsapp = input.telefone_whatsapp ?? null
 
     await survey.save()
 
@@ -287,6 +313,11 @@ export class SurveyService {
           config_visual: source.configVisual ? JSON.stringify(source.configVisual) : null,
           link_agendamento: source.linkAgendamento,
           email_notificacao: source.emailNotificacao,
+          mostrar_btn_relatorio: source.mostrarBtnRelatorio,
+          mostrar_btn_email: source.mostrarBtnEmail,
+          mostrar_btn_whatsapp: source.mostrarBtnWhatsapp,
+          mostrar_btn_consultor: source.mostrarBtnConsultor,
+          telefone_whatsapp: source.telefoneWhatsapp,
           created_at: new Date(),
           updated_at: new Date(),
         })
@@ -404,20 +435,19 @@ export class SurveyService {
    */
   async setVisualIdentity(
     id: number,
-    colors: { cor_primaria?: string; cor_secundaria?: string; cor_fundo?: string; tema?: string }
+    colors: { cor_primaria?: string; cor_secundaria?: string; cor_fundo?: string; tema?: SurveyTema }
   ): Promise<SurveyView> {
     const survey = await Survey.find(id)
     if (!survey) throw new NotFoundError()
 
     // Merge with existing config_visual (preserve logo_s3_key if present)
     const currentVisual = survey.configVisual ?? {}
-    survey.configVisual = {
-      ...currentVisual,
-      ...(colors.cor_primaria !== undefined && { cor_primaria: colors.cor_primaria }),
-      ...(colors.cor_secundaria !== undefined && { cor_secundaria: colors.cor_secundaria }),
-      ...(colors.cor_fundo !== undefined && { cor_fundo: colors.cor_fundo }),
-      ...(colors.tema !== undefined && { tema: colors.tema }),
-    }
+    const merged: ConfigVisual = { ...currentVisual }
+    if (colors.cor_primaria !== undefined) merged.cor_primaria = colors.cor_primaria
+    if (colors.cor_secundaria !== undefined) merged.cor_secundaria = colors.cor_secundaria
+    if (colors.cor_fundo !== undefined) merged.cor_fundo = colors.cor_fundo
+    if (colors.tema !== undefined) merged.tema = colors.tema
+    survey.configVisual = merged
 
     await survey.save()
     return toView(survey)

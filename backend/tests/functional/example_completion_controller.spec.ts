@@ -42,6 +42,7 @@ const { default: CompletionController } = await import(
   '../../app/controllers/public/completion_controller.js'
 )
 const { default: ResponseEvent } = await import('../../app/models/response_event.js')
+const { default: Survey } = await import('../../app/models/survey.js')
 
 // --- Helpers ---
 
@@ -107,6 +108,14 @@ describe('CompletionController.handle — successful completion (Requirement 7.1
       ...data,
     }))
 
+    // Mock Survey.findOrFail to return button config
+    const surveyFindMock = mock.method(Survey, 'findOrFail', async (_id: number) => ({
+      mostrarBtnRelatorio: true,
+      mostrarBtnEmail: true,
+      mostrarBtnWhatsapp: true,
+      mostrarBtnConsultor: true,
+    }))
+
     const session = createMockSession()
     const { ctx, getStatus, getBody } = createMockContext(session)
 
@@ -131,6 +140,7 @@ describe('CompletionController.handle — successful completion (Requirement 7.1
     assert.ok(eventArg.payload.completed_at, 'Event payload should include completed_at')
 
     createMock.mock.restore()
+    surveyFindMock.mock.restore()
   })
 
   it('completed_at in response matches the DateTime set on the session', async () => {
@@ -139,6 +149,14 @@ describe('CompletionController.handle — successful completion (Requirement 7.1
     const createMock = mock.method(ResponseEvent, 'create', async (data: any) => ({
       id: 43,
       ...data,
+    }))
+
+    // Mock Survey.findOrFail to return button config
+    const surveyFindMock = mock.method(Survey, 'findOrFail', async (_id: number) => ({
+      mostrarBtnRelatorio: true,
+      mostrarBtnEmail: true,
+      mostrarBtnWhatsapp: true,
+      mostrarBtnConsultor: true,
     }))
 
     const session = createMockSession()
@@ -157,6 +175,75 @@ describe('CompletionController.handle — successful completion (Requirement 7.1
     )
 
     createMock.mock.restore()
+    surveyFindMock.mock.restore()
+  })
+
+  it('includes button config fields from survey in the response', async () => {
+    revalidateResult = true
+
+    const createMock = mock.method(ResponseEvent, 'create', async (data: any) => ({
+      id: 44,
+      ...data,
+    }))
+
+    // Mock Survey.findOrFail with specific button config values
+    const surveyFindMock = mock.method(Survey, 'findOrFail', async (_id: number) => ({
+      mostrarBtnRelatorio: false,
+      mostrarBtnEmail: true,
+      mostrarBtnWhatsapp: false,
+      mostrarBtnConsultor: true,
+    }))
+
+    const session = createMockSession()
+    const { ctx, getStatus, getBody } = createMockContext(session)
+
+    const controller = new CompletionController()
+    await controller.handle(ctx)
+
+    assert.strictEqual(getStatus(), 200, 'Should respond with 200')
+
+    const body = getBody() as any
+    assert.strictEqual(body.mostrar_btn_relatorio, false, 'Should include mostrar_btn_relatorio from survey')
+    assert.strictEqual(body.mostrar_btn_email, true, 'Should include mostrar_btn_email from survey')
+    assert.strictEqual(body.mostrar_btn_whatsapp, false, 'Should include mostrar_btn_whatsapp from survey')
+    assert.strictEqual(body.mostrar_btn_consultor, true, 'Should include mostrar_btn_consultor from survey')
+
+    createMock.mock.restore()
+    surveyFindMock.mock.restore()
+  })
+
+  it('defaults button fields to true when survey fields are undefined (fallback)', async () => {
+    revalidateResult = true
+
+    const createMock = mock.method(ResponseEvent, 'create', async (data: any) => ({
+      id: 45,
+      ...data,
+    }))
+
+    // Mock Survey.findOrFail with undefined button config fields (legacy data scenario)
+    const surveyFindMock = mock.method(Survey, 'findOrFail', async (_id: number) => ({
+      mostrarBtnRelatorio: undefined,
+      mostrarBtnEmail: undefined,
+      mostrarBtnWhatsapp: undefined,
+      mostrarBtnConsultor: undefined,
+    }))
+
+    const session = createMockSession()
+    const { ctx, getStatus, getBody } = createMockContext(session)
+
+    const controller = new CompletionController()
+    await controller.handle(ctx)
+
+    assert.strictEqual(getStatus(), 200, 'Should respond with 200')
+
+    const body = getBody() as any
+    assert.strictEqual(body.mostrar_btn_relatorio, true, 'Should default to true when field is undefined')
+    assert.strictEqual(body.mostrar_btn_email, true, 'Should default to true when field is undefined')
+    assert.strictEqual(body.mostrar_btn_whatsapp, true, 'Should default to true when field is undefined')
+    assert.strictEqual(body.mostrar_btn_consultor, true, 'Should default to true when field is undefined')
+
+    createMock.mock.restore()
+    surveyFindMock.mock.restore()
   })
 })
 

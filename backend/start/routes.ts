@@ -10,6 +10,11 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 
+// Health check (used by ECS task health check)
+router.get('/health', async ({ response }) => {
+  return response.ok({ status: 'ok' })
+})
+
 const AuthController = () => import('#controllers/auth_controller')
 const MeController = () => import('#controllers/me_controller')
 const AdminUsersController = () => import('#controllers/admin_users_controller')

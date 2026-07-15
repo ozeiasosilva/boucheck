@@ -113,6 +113,11 @@ export interface Survey {
   link_agendamento: string | null
   email_notificacao: string | null
   usar_ia_no_relatorio: boolean
+  mostrar_btn_relatorio: boolean
+  mostrar_btn_email: boolean
+  mostrar_btn_whatsapp: boolean
+  mostrar_btn_consultor: boolean
+  telefone_whatsapp: string | null
   created_at: string
   updated_at: string
 }

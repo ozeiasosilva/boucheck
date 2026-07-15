@@ -126,7 +126,7 @@ export class ResendService {
 
     await sqsClient.send(
       new SendMessageCommand({
-        QueueUrl: process.env.REPORTING_QUEUE_URL,
+        QueueUrl: process.env.SQS_REPORTING_QUEUE_URL,
         MessageBody: JSON.stringify(messageBody),
       })
     )

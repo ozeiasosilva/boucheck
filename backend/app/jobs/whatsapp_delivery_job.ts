@@ -97,8 +97,21 @@ export async function handleWhatsAppDelivery(
   }
 
   try {
-    // 2. Load the Report to construct the public link
-    const report = await Report.query().where('response_id', responseId).firstOrFail()
+    // 2. Load the Report — if the response was deleted, bail gracefully
+    const report = await Report.query().where('response_id', responseId).first()
+
+    if (!report) {
+      console.log(
+        JSON.stringify({
+          event: 'whatsapp_delivery_skipped_orphan',
+          response_id: responseId,
+          message_id: ctx.messageId,
+          reason: 'response or report no longer exists',
+        })
+      )
+      return
+    }
+
     const reportUrl = `${publicBaseUrl}/r/${report.publicToken}`
 
     // 3. Send the template message via WhatsApp Cloud API (Req 14.1, 14.2)

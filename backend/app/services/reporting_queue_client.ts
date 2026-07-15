@@ -13,6 +13,7 @@ export type ReportingQueueMessage =
   | { kind: 'email_deliver'; response_id: string; to_email: string }
   | { kind: 'whatsapp_deliver'; response_id: string; to_phone: string }
   | { kind: 'consultant_notify'; response_id: string; to_email: string }
+  | { kind: 'consultant_whatsapp_notify'; response_id: string; to_email: string }
 
 export interface ReportingQueueConfig {
   queueUrl: string

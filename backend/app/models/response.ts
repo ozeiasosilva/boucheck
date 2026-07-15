@@ -67,6 +67,9 @@ export default class Response extends BaseModel {
   @column.dateTime({ columnName: 'completed_at' })
   declare completedAt: DateTime | null
 
+  @column({ columnName: 'solicitou_whatsapp' })
+  declare solicitouWhatsapp: boolean
+
   @column()
   declare anonimizado: boolean
 

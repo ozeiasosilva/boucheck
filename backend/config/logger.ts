@@ -10,7 +10,6 @@ export default defineConfig({
       enabled: true,
       name: 'boucheck',
       level: env.get('LOG_LEVEL', 'info'),
-      transport: null,
       serializers: logSerializers,
     },
   },

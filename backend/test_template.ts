@@ -18,7 +18,7 @@ const html = renderReportHtml({
     { questionText: 'Qual seu nível?', answerText: 'Intermediário' },
   ],
   recommendationText: 'Continue investindo em capacitação.',
-  footer: { contact: 'contato@beonup.com.br', linkAgendamento: 'https://calendly.com/beonup' },
+  footer: { contact: 'contato@beonup.com.br', linkAgendamento: 'https://calendly.com/beonup', telefoneWhatsapp: null },
 })
 
 console.log('HTML length:', html.length)
@@ -42,7 +42,7 @@ const htmlNoBand = renderReportHtml({
   dimensionScores: [],
   answerSummary: [],
   recommendationText: 'Texto padrão.',
-  footer: { contact: 'contato@beonup.com.br', linkAgendamento: 'https://calendly.com/beonup' },
+  footer: { contact: 'contato@beonup.com.br', linkAgendamento: 'https://calendly.com/beonup', telefoneWhatsapp: null },
 })
 
 console.log('\n--- No band, no dimensions ---')

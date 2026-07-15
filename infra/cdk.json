@@ -14,6 +14,7 @@
     ]
   },
   "context": {
+    "vpcId": "vpc-0715b91386ff3b9b1",
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": ["aws"]

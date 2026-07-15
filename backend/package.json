@@ -11,6 +11,7 @@
     "#middleware/*": "./app/middleware/*.js",
     "#models/*": "./app/models/*.js",
     "#services/*": "./app/services/*.js",
+    "#support/*": "./app/support/*.js",
     "#validators/*": "./app/validators/*.js",
     "#config/*": "./config/*.js",
     "#database/*": "./database/*.js",

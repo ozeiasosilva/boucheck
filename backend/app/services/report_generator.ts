@@ -136,6 +136,7 @@ export class ReportGenerator {
       footer: {
         contact: BEONUP_CONTACT,
         linkAgendamento: survey.linkAgendamento || DEFAULT_LINK_AGENDAMENTO,
+        telefoneWhatsapp: survey.telefoneWhatsapp || null,
       },
     }
 

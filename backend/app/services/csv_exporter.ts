@@ -139,10 +139,11 @@ export class CsvExporter {
     const queryBuilder = new SessionQueryBuilder(filters, sort)
     const query = queryBuilder.build()
 
-    // Stream rows from cursor asynchronously
+    // Stream rows asynchronously (fetch all and iterate)
     ;(async () => {
       try {
-        for await (const row of query.cursor()) {
+        const rows = await query.exec()
+        for (const row of rows) {
           stream.push(toCsvRow(row).join(';') + '\r\n')
         }
         stream.push(null) // end stream

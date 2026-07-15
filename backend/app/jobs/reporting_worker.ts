@@ -6,6 +6,7 @@ import { handlePdfGeneration } from './pdf_generation_job.js'
 import { handleEmailDelivery } from './email_delivery_job.js'
 import { handleWhatsAppDelivery } from './whatsapp_delivery_job.js'
 import { handleConsultantNotify } from './consultant_notify_job.js'
+import { handleConsultantWhatsappNotify } from './consultant_whatsapp_notify_job.js'
 
 // ---------------------------------------------------------------------------
 // Reporting Worker Entry Point (Req 18.1)
@@ -15,12 +16,13 @@ import { handleConsultantNotify } from './consultant_notify_job.js'
 // call with each batch of SQS records.
 //
 // Handler registrations:
-//   score_calculate   → ScoreCalculatorJob   (task 3)
-//   report_generate   → ReportGeneratorJob   (task 8)
-//   pdf_generate      → PdfGenerationJob     (task 11)
-//   email_deliver     → EmailDeliveryJob     (task 13)
-//   whatsapp_deliver  → WhatsAppDeliveryJob  (task 14)
-//   consultant_notify → ConsultantNotifyJob  (simple notification email)
+//   score_calculate            → ScoreCalculatorJob   (task 3)
+//   report_generate            → ReportGeneratorJob   (task 8)
+//   pdf_generate               → PdfGenerationJob     (task 11)
+//   email_deliver              → EmailDeliveryJob     (task 13)
+//   whatsapp_deliver           → WhatsAppDeliveryJob  (task 14)
+//   consultant_notify          → ConsultantNotifyJob  (simple notification email)
+//   consultant_whatsapp_notify → ConsultantWhatsappNotifyJob (email + PDF to consultant)
 // ---------------------------------------------------------------------------
 
 /**
@@ -51,6 +53,10 @@ dispatcher.register('whatsapp_deliver', (msg, ctx) =>
 
 dispatcher.register('consultant_notify', (msg, ctx) =>
   handleConsultantNotify(msg as any, ctx)
+)
+
+dispatcher.register('consultant_whatsapp_notify', (msg, ctx) =>
+  handleConsultantWhatsappNotify(msg as any, ctx)
 )
 
 /**

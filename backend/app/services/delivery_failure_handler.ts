@@ -76,9 +76,27 @@ export async function handleDeliveryFailure(input: DeliveryFailureInput): Promis
     return
   }
 
-  await ResponseEvent.create({
-    responseId,
-    tipo: 'relatorio_envio_falhou',
-    payload: { canal, motivo: errorMessage },
-  })
+  try {
+    await ResponseEvent.create({
+      responseId,
+      tipo: 'relatorio_envio_falhou',
+      payload: { canal, motivo: errorMessage },
+    })
+  } catch (insertErr: unknown) {
+    // If the response was deleted, the FK constraint will fail.
+    // Log and move on — there's nothing to record the event against.
+    const msg = insertErr instanceof Error ? insertErr.message : String(insertErr)
+    if (msg.includes('response_events_response_id_foreign')) {
+      console.error(
+        JSON.stringify({
+          event: 'delivery_failure_event_skipped',
+          response_id: responseId,
+          canal,
+          reason: 'response_deleted',
+        })
+      )
+      return
+    }
+    throw insertErr
+  }
 }

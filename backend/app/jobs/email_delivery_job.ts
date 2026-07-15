@@ -172,8 +172,20 @@ export async function handleEmailDelivery(
   }
 
   try {
-    // 2. Load the Report row
-    let report = await Report.query().where('response_id', responseId).firstOrFail()
+    // 2. Load the Report row — if the response was deleted, bail gracefully
+    let report = await Report.query().where('response_id', responseId).first()
+
+    if (!report) {
+      console.log(
+        JSON.stringify({
+          event: 'email_delivery_skipped_orphan',
+          response_id: responseId,
+          message_id: ctx.messageId,
+          reason: 'response or report no longer exists',
+        })
+      )
+      return
+    }
 
     // 3. PDF reuse-vs-render gating (Req 9.4)
     if (!report.pdfS3Key) {

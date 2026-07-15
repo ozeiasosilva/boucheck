@@ -94,7 +94,7 @@ async function main() {
           QueueUrl: queueUrl,
           MaxNumberOfMessages: MAX_MESSAGES,
           WaitTimeSeconds: WAIT_TIME_SECONDS,
-          AttributeNames: ['ApproximateReceiveCount'],
+          AttributeNames: ['ApproximateReceiveCount' as any],
         })
       )
 

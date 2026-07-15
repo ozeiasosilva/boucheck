@@ -15,12 +15,13 @@ export const createSurveyValidator = vine.compile(
     link_agendamento: vine.string().url().optional(),
     email_notificacao: vine.string().email().optional(),
     usar_ia_no_relatorio: vine.boolean().optional(),
+    telefone_whatsapp: vine.string().trim().maxLength(20).nullable().optional(),
   })
 )
 
 /**
  * PUT /api/admin/surveys/:id
- * Requirements: 1.4, 1.5, 1.6, 2.1
+ * Requirements: 1.4, 1.5, 1.6, 2.1, 3.1, 3.2
  */
 export const updateSurveyValidator = vine.compile(
   vine.object({
@@ -31,6 +32,12 @@ export const updateSurveyValidator = vine.compile(
     tempo_estimado_min: vine.number().positive().optional(),
     link_agendamento: vine.string().url().optional(),
     email_notificacao: vine.string().email().optional(),
+    usar_ia_no_relatorio: vine.boolean().optional(),
+    mostrar_btn_relatorio: vine.boolean().optional(),
+    mostrar_btn_email: vine.boolean().optional(),
+    mostrar_btn_whatsapp: vine.boolean().optional(),
+    mostrar_btn_consultor: vine.boolean().optional(),
+    telefone_whatsapp: vine.string().trim().maxLength(20).nullable().optional(),
   })
 )
 

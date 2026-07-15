@@ -48,6 +48,21 @@ export default class Survey extends BaseModel {
   @column({ columnName: 'usar_ia_no_relatorio' })
   declare usarIaNoRelatorio: boolean
 
+  @column({ columnName: 'mostrar_btn_relatorio' })
+  declare mostrarBtnRelatorio: boolean
+
+  @column({ columnName: 'mostrar_btn_email' })
+  declare mostrarBtnEmail: boolean
+
+  @column({ columnName: 'mostrar_btn_whatsapp' })
+  declare mostrarBtnWhatsapp: boolean
+
+  @column({ columnName: 'mostrar_btn_consultor' })
+  declare mostrarBtnConsultor: boolean
+
+  @column({ columnName: 'telefone_whatsapp' })
+  declare telefoneWhatsapp: string | null
+
   @column({ columnName: 'created_by' })
   declare createdBy: number | null
 

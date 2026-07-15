@@ -3,6 +3,8 @@ import { DateTime } from 'luxon'
 import { revalidateAnsweredPath } from '#services/navigation_validator'
 import ResponseEvent from '#models/response_event'
 import reportingQueue from '#services/reporting_queue_client'
+import Survey from '#models/survey'
+import { buildLogoUrl } from '#support/build_logo_url'
 
 export default class CompletionController {
   /**
@@ -70,9 +72,18 @@ export default class CompletionController {
       )
     }
 
+    // Load the survey to include button config in the response (Req 4.1, 4.2, 4.3)
+    const survey = await Survey.findOrFail(session.surveyId)
+
     return response.ok({
       completed: true,
       completed_at: now.toISO(),
+      logo_url: buildLogoUrl(survey.configVisual?.logo_s3_key ?? null),
+      telefone_whatsapp: survey.telefoneWhatsapp ?? null,
+      mostrar_btn_relatorio: survey.mostrarBtnRelatorio ?? true,
+      mostrar_btn_email: survey.mostrarBtnEmail ?? true,
+      mostrar_btn_whatsapp: survey.mostrarBtnWhatsapp ?? true,
+      mostrar_btn_consultor: survey.mostrarBtnConsultor ?? true,
     })
   }
 }

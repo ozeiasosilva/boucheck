@@ -173,14 +173,32 @@ export async function submitChecklist(
  */
 export async function triggerCompletion(
   token: string
-): Promise<{ completed: boolean; completed_at: string }> {
+): Promise<{
+  completed: boolean
+  completed_at: string
+  logo_url: string | null
+  telefone_whatsapp: string | null
+  mostrar_btn_relatorio: boolean
+  mostrar_btn_email: boolean
+  mostrar_btn_whatsapp: boolean
+  mostrar_btn_consultor: boolean
+}> {
   const res = await fetch(`${API_URL}/api/public/responses/${token}/complete`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
   })
 
-  return handleResponse<{ completed: boolean; completed_at: string }>(res)
+  return handleResponse<{
+    completed: boolean
+    completed_at: string
+    logo_url: string | null
+    telefone_whatsapp: string | null
+    mostrar_btn_relatorio: boolean
+    mostrar_btn_email: boolean
+    mostrar_btn_whatsapp: boolean
+    mostrar_btn_consultor: boolean
+  }>(res)
 }
 
 /**

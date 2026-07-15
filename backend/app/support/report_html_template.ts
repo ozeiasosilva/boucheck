@@ -14,6 +14,8 @@
 //   10.2 — Footer CTA linking to link_agendamento
 // ---------------------------------------------------------------------------
 
+import { buildLogoUrl } from '#support/build_logo_url'
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -31,7 +33,7 @@ export interface ReportContext {
   dimensionScores: Array<{ dimensao: string; normalized: number }>
   answerSummary: Array<{ questionText: string; answerText: string }>
   recommendationText: string
-  footer: { contact: string; linkAgendamento: string }
+  footer: { contact: string; linkAgendamento: string | null; telefoneWhatsapp: string | null }
 }
 
 // ---------------------------------------------------------------------------
@@ -71,6 +73,7 @@ export function renderReportHtml(ctx: ReportContext): string {
   ${renderHeader(ctx)}
   ${renderScoreSection(ctx)}
   ${ctx.dimensionScores.length > 0 ? renderRadarChart(ctx.dimensionScores) : ''}
+  ${ctx.dimensionScores.length > 0 ? renderPillarBars(ctx.dimensionScores) : ''}
   ${renderRecommendation(ctx.recommendationText)}
   ${renderAnswerSummary(ctx.answerSummary)}
   ${renderFooter(ctx.footer)}
@@ -124,6 +127,13 @@ function buildInlineStyles(vi: ReportContext['visualIdentity']): string {
       display: inline-block; padding: 12px 32px; background: ${esc(primary)};
       color: #fff; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: 600;
     }
+    .pillar-bars-section { margin: 0 0 40px; }
+    .pillar-bar-row { display: flex; align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid #e0e0e0; }
+    .pillar-bar-row:last-child { border-bottom: none; }
+    .pillar-bar-name { flex: 1; font-size: 14px; font-weight: 600; }
+    .pillar-bar-track { flex: 2; height: 9px; background: #e0e0e0; border-radius: 99px; overflow: hidden; }
+    .pillar-bar-fill { display: block; height: 100%; border-radius: 99px; }
+    .pillar-bar-score { width: 44px; text-align: right; font-weight: 600; font-size: 14px; }
   `
 }
 
@@ -132,8 +142,9 @@ function buildInlineStyles(vi: ReportContext['visualIdentity']): string {
 // ---------------------------------------------------------------------------
 
 function renderHeader(ctx: ReportContext): string {
-  const logoHtml = ctx.visualIdentity.logoS3Key
-    ? `<img class="logo" src="${esc(ctx.visualIdentity.logoS3Key)}" alt="Logo" />`
+  const logoUrl = buildLogoUrl(ctx.visualIdentity.logoS3Key ?? null)
+  const logoHtml = logoUrl
+    ? `<img class="logo" src="${esc(logoUrl)}" alt="Logo" />`
     : ''
 
   const nome = ctx.response.nome ? esc(ctx.response.nome) : ''
@@ -270,6 +281,37 @@ function renderDimensionList(dimensionScores: Array<{ dimensao: string; normaliz
   </div>`
 }
 
+/**
+ * Returns a color based on the maturity level for a given score (0-100).
+ */
+function scoreColor(score: number): string {
+  if (score <= 20) return '#C4453C'
+  if (score <= 40) return '#D96B3B'
+  if (score <= 60) return '#D99A32'
+  if (score <= 80) return '#3E8E5A'
+  return '#0E7C86'
+}
+
+/**
+ * Renders pillar bars below the radar chart showing each dimension's score
+ * as a colored progress bar — replicating the Raio-X visual style.
+ */
+function renderPillarBars(dimensionScores: Array<{ dimensao: string; normalized: number }>): string {
+  if (dimensionScores.length === 0) return ''
+
+  const bars = dimensionScores.map((d) => {
+    const color = scoreColor(d.normalized)
+    const pct = Math.round(d.normalized)
+    return `<div class="pillar-bar-row">
+      <span class="pillar-bar-name">${esc(d.dimensao)}</span>
+      <span class="pillar-bar-track"><span class="pillar-bar-fill" style="width:${pct}%;background:${color}"></span></span>
+      <span class="pillar-bar-score" style="color:${color}">${pct}</span>
+    </div>`
+  }).join('\n')
+
+  return `<div class="pillar-bars-section">${bars}</div>`
+}
+
 function renderRecommendation(recommendationText: string): string {
   return `<div class="recommendation-section">
     <h2>Recomendações</h2>
@@ -296,8 +338,18 @@ function renderAnswerSummary(answerSummary: Array<{ questionText: string; answer
 }
 
 function renderFooter(footer: ReportContext['footer']): string {
+  let ctaHtml = ''
+
+  if (footer.telefoneWhatsapp) {
+    // Build WhatsApp link using the survey's telefone_whatsapp (same behavior as concluido page)
+    const whatsappUrl = `https://wa.me/${footer.telefoneWhatsapp}`
+    ctaHtml = `<a class="cta-link" href="${esc(whatsappUrl)}" target="_blank" rel="noopener noreferrer">Agendar apresentação com um consultor</a>`
+  } else if (footer.linkAgendamento && footer.linkAgendamento !== '#') {
+    ctaHtml = `<a class="cta-link" href="${esc(footer.linkAgendamento)}" target="_blank" rel="noopener noreferrer">Agendar apresentação com um consultor</a>`
+  }
+
   return `<div class="footer">
     <div class="contact">${esc(footer.contact)}</div>
-    <a class="cta-link" href="${esc(footer.linkAgendamento)}">Agendar apresentação com um consultor</a>
+    ${ctaHtml}
   </div>`
 }

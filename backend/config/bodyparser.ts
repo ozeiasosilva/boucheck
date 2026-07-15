@@ -9,7 +9,6 @@ export default defineConfig({
     autoProcess: true,
     processManually: [],
     encoding: 'utf-8',
-    maxFileSize: '10mb',
     limit: '50mb',
     types: ['multipart/form-data'],
   },
@@ -34,7 +33,7 @@ export default defineConfig({
    * The URL encoded parser is used to parse the HTML form submission
    * request body.
    */
-  urlEncoded: {
+  form: {
     encoding: 'utf-8',
     limit: '1mb',
     queryString: {},

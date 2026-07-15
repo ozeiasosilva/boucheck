@@ -9,7 +9,6 @@ import {
   logEvent,
   requestReportEmail,
   requestReportWhatsapp,
-  requestConsultantSchedule,
   fetchReportInfo,
   getPublicReportUrl,
   ApiResponseError,
@@ -28,6 +27,7 @@ export default function ConcluidoPage() {
   const [loading, setLoading] = useState(true)
   const [completedAt, setCompletedAt] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   // Action states
   const [emailStatus, setEmailStatus] = useState<ActionStatus>('idle')
@@ -38,6 +38,13 @@ export default function ConcluidoPage() {
   const [reportUrl, setReportUrl] = useState<string | null>(null)
   const [reportLoading, setReportLoading] = useState(false)
   const [reportNotReady, setReportNotReady] = useState(false)
+  const [telefoneWhatsapp, setTelefoneWhatsapp] = useState<string | null>(null)
+  const [buttonConfig, setButtonConfig] = useState({
+    mostrar_btn_relatorio: true,
+    mostrar_btn_email: true,
+    mostrar_btn_whatsapp: true,
+    mostrar_btn_consultor: true,
+  })
 
   const completionTriggered = useRef(false)
 
@@ -54,6 +61,14 @@ export default function ConcluidoPage() {
       try {
         const data = await triggerCompletion(token)
         setCompletedAt(data.completed_at)
+        setLogoUrl(data.logo_url ?? null)
+        setTelefoneWhatsapp(data.telefone_whatsapp ?? null)
+        setButtonConfig({
+          mostrar_btn_relatorio: data.mostrar_btn_relatorio ?? true,
+          mostrar_btn_email: data.mostrar_btn_email ?? true,
+          mostrar_btn_whatsapp: data.mostrar_btn_whatsapp ?? true,
+          mostrar_btn_consultor: data.mostrar_btn_consultor ?? true,
+        })
         setLoading(false)
 
         // Fire pagina_acessada event after completion renders (Req 8.1, 8.2)
@@ -111,22 +126,23 @@ export default function ConcluidoPage() {
     }
   }
 
-  // Req 15.1, 15.2, 15.3 — Request consultant scheduling
+  // Req 4.2, 4.3, 4.4 — Request consultant via WhatsApp
+  function buildWhatsappUrl(telefone: string): string {
+    return `https://wa.me/${telefone}`
+  }
+
   async function handleConsultantRequest() {
-    if (!token || consultantStatus === 'loading' || consultantStatus === 'success') return
+    if (!token || !telefoneWhatsapp) return
     setConsultantStatus('loading')
     setConsultantError(null)
     try {
-      const result = await requestConsultantSchedule(token)
+      // Req 4.4 — Log event before opening WhatsApp
+      await logEvent(token, 'consultor_solicitado', { via: 'whatsapp' })
       setConsultantStatus('success')
-      // Open the scheduling link in a new tab (Req 15.2)
-      window.open(result.link_agendamento, '_blank', 'noopener,noreferrer')
-    } catch (err) {
-      if (err instanceof ApiResponseError && err.body.error === 'link_agendamento_unavailable') {
-        setConsultantError('O agendamento não está disponível no momento.')
-      } else {
-        setConsultantError('Erro ao solicitar agendamento.')
-      }
+      // Req 4.2 — Open WhatsApp in new tab
+      window.open(buildWhatsappUrl(telefoneWhatsapp), '_blank', 'noopener,noreferrer')
+    } catch {
+      setConsultantError('Erro ao registrar solicitação.')
       setConsultantStatus('error')
     }
   }
@@ -213,7 +229,7 @@ export default function ConcluidoPage() {
         <div className={`rounded-xl shadow-sm p-6 sm:p-8 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <img src="/logo_completo.png" alt="BouCheck" className="h-10 w-auto object-contain" />
+            <img src={logoUrl || '/logo_completo.png'} alt="Logo" className="h-10 w-auto object-contain" />
           </div>
 
           {/* Success icon */}
@@ -237,12 +253,15 @@ export default function ConcluidoPage() {
           )}
 
           {/* Report action buttons */}
+          {(buttonConfig.mostrar_btn_relatorio || buttonConfig.mostrar_btn_email || buttonConfig.mostrar_btn_whatsapp || buttonConfig.mostrar_btn_consultor) && (
           <div className={`border-t pt-6 space-y-3 ${isDark ? 'border-gray-700' : 'border-gray-100'}`}>
             <p className={`text-sm font-medium mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Deseja receber seu relatório?
             </p>
 
             {/* Visualizar relatório (Req 8.4, 17.3) */}
+            {buttonConfig.mostrar_btn_relatorio && (
+            <>
             <button
               onClick={handleViewReport}
               disabled={reportLoading}
@@ -274,8 +293,12 @@ export default function ConcluidoPage() {
                 O relatório ainda está sendo gerado. Tente novamente em alguns instantes.
               </p>
             )}
+            </>
+            )}
 
             {/* Receber por e-mail (Req 13.1, 13.4) */}
+            {buttonConfig.mostrar_btn_email && (
+            <>
             <button
               onClick={handleEmailRequest}
               disabled={emailStatus === 'loading' || emailStatus === 'success'}
@@ -308,8 +331,12 @@ export default function ConcluidoPage() {
             {emailStatus === 'error' && (
               <p className="text-xs text-red-500">Erro ao solicitar envio por e-mail. Tente novamente.</p>
             )}
+            </>
+            )}
 
             {/* Receber por WhatsApp (Req 14.1) */}
+            {buttonConfig.mostrar_btn_whatsapp && (
+            <>
             <button
               onClick={handleWhatsappRequest}
               disabled={whatsappStatus === 'loading' || whatsappStatus === 'success'}
@@ -342,23 +369,23 @@ export default function ConcluidoPage() {
             {whatsappStatus === 'error' && (
               <p className="text-xs text-red-500">Erro ao solicitar envio por WhatsApp. Tente novamente.</p>
             )}
+            </>
+            )}
 
-            {/* Falar com consultor (Req 15.1, 15.2, 15.3) */}
+            {/* Falar com consultor (Req 4.2, 4.3, 4.4) */}
+            {buttonConfig.mostrar_btn_consultor && telefoneWhatsapp && (
+            <>
             <button
               onClick={handleConsultantRequest}
               disabled={consultantStatus === 'loading' || consultantStatus === 'success'}
-              className={`w-full px-4 py-3 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm ${
-                isDark
-                  ? 'bg-brand-orange text-white hover:bg-accent-hover focus:ring-brand-orange'
-                  : 'bg-brand-orange text-white hover:bg-accent-hover focus:ring-brand-orange'
-              }`}
+              className="w-full px-4 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
             >
               {consultantStatus === 'success' ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  Agendamento aberto
+                  WhatsApp aberto
                 </span>
               ) : consultantStatus === 'loading' ? (
                 <span className="flex items-center justify-center gap-2">
@@ -370,8 +397,8 @@ export default function ConcluidoPage() {
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                   </svg>
                   Falar com um consultor
                 </span>
@@ -380,7 +407,10 @@ export default function ConcluidoPage() {
             {consultantError && (
               <p className="text-xs text-red-500">{consultantError}</p>
             )}
+            </>
+            )}
           </div>
+          )}
         </div>
       </div>
     </main>
