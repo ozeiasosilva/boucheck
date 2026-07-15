@@ -264,8 +264,8 @@ export class BackendStack extends Stack {
     // --- Worker Service (SQS consumer, no inbound traffic) ---
 
     const workerTaskDef = new ecs.FargateTaskDefinition(this, 'WorkerTaskDef', {
-      cpu: 256,
-      memoryLimitMiB: 512,
+      cpu: 1024,
+      memoryLimitMiB: 2048,
       taskRole,
     });
 
