@@ -75,6 +75,16 @@ export default class ReportActionController {
       to_email: email,
     })
 
+    // Also send a copy of the report to the internal team (survey's email_notificacao)
+    const survey = await Survey.find(session.surveyId)
+    if (survey?.emailNotificacao && survey.emailNotificacao !== email) {
+      await reportingQueue.enqueue({
+        kind: 'email_deliver',
+        response_id: session.id,
+        to_email: survey.emailNotificacao,
+      })
+    }
+
     return response.ok({
       masked_email: maskEmail(email),
     })
