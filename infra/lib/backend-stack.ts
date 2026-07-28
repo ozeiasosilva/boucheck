@@ -82,6 +82,11 @@ export class BackendStack extends Stack {
       default: 'https://cdn.boucheck.beonup.com.br',
     });
 
+    const frontendUrl = new CfnParameter(this, 'FrontendUrl', {
+      type: 'String',
+      default: 'https://boucheck.beonup.com.br',
+    });
+
     const sesFromEmail = new CfnParameter(this, 'SesFromEmail', {
       type: 'String',
       default: 'contato@beonup.com.br',
@@ -219,6 +224,7 @@ export class BackendStack extends Stack {
         S3_REPORTS_BUCKET: s3ReportsBucket.valueAsString,
         AWS_REGION: awsRegion.valueAsString,
         CDN_BASE_URL: cdnBaseUrl.valueAsString,
+        FRONTEND_URL: frontendUrl.valueAsString,
         SES_FROM_EMAIL: sesFromEmail.valueAsString,
         BEDROCK_MODEL_ID: bedrockModelId.valueAsString,
         BEDROCK_REGION: bedrockRegion.valueAsString,
@@ -294,6 +300,7 @@ export class BackendStack extends Stack {
         S3_REPORTS_BUCKET: s3ReportsBucket.valueAsString,
         AWS_REGION: awsRegion.valueAsString,
         CDN_BASE_URL: cdnBaseUrl.valueAsString,
+        FRONTEND_URL: frontendUrl.valueAsString,
         SES_FROM_EMAIL: sesFromEmail.valueAsString,
         BEDROCK_MODEL_ID: bedrockModelId.valueAsString,
         BEDROCK_REGION: bedrockRegion.valueAsString,

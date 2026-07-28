@@ -54,6 +54,7 @@ export class PromptBuilder {
       '    "texto": "string (não vazio, texto da pergunta)",',
       '    "tipo": "escolha_unica" | "multipla_escolha" | "aberta",',
       '    "obrigatoria": true | false,',
+      '    "dimensao": "string (nome curto do pilar/dimensão temática a que esta pergunta pertence)",',
       '    "opcoes": [',
       '      { "texto": "string (não vazio, texto da opção)", "pontuacao": number }',
       '    ]',
@@ -64,6 +65,7 @@ export class PromptBuilder {
       '5. Use SOMENTE os tipos de pergunta listados em "tipos_permitidos" abaixo.',
       '6. Gere EXATAMENTE a quantidade de perguntas indicada em "quantidade" abaixo.',
       '7. NÃO inclua blocos de código (```), comentários, ou qualquer caractere fora do array JSON.',
+      '8. O campo "dimensao" DEVE agrupar as perguntas em pilares temáticos coerentes (ex: "Infraestrutura", "Segurança", "Governança"). Use entre 3 e 7 dimensões distintas para o conjunto de perguntas.',
     ].join('\n')
 
     const user = [

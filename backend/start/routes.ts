@@ -33,6 +33,8 @@ const InsightController = () => import('#controllers/admin/insight_controller')
 const InteractionHistoryController = () => import('#controllers/admin/interaction_history_controller')
 const AiPromptConfigController = () => import('#controllers/admin/ai_prompt_config_controller')
 
+const AdminSettingsController = () => import('#controllers/admin/settings_controller')
+
 const PublicSurveyController = () => import('#controllers/public/survey_controller')
 const AnswerController = () => import('#controllers/public/answer_controller')
 const ChecklistController = () => import('#controllers/public/checklist_controller')
@@ -41,6 +43,7 @@ const PublicResponseController = () => import('#controllers/public/response_cont
 const EventController = () => import('#controllers/public/event_controller')
 const ReportController = () => import('#controllers/public/report_controller')
 const ReportActionController = () => import('#controllers/public/report_action_controller')
+const PublicSettingsController = () => import('#controllers/public/settings_controller')
 
 router.get('/', async () => {
   return { hello: 'BouCheck API' }
@@ -171,6 +174,12 @@ router
         router.post('/responses/:responseId/interactions', [InteractionHistoryController, 'store'])
         router.get('/ai-config/prompts', [AiPromptConfigController, 'show'])
         router.put('/ai-config/prompts', [AiPromptConfigController, 'update'])
+
+        // ──────────────────────────────────────────────────────────────────────
+        // Settings (landpage-boucheck spec)
+        // ──────────────────────────────────────────────────────────────────────
+        router.get('/settings', [AdminSettingsController, 'index'])
+        router.put('/settings', [AdminSettingsController, 'update'])
       })
       .use([middleware.auth(), middleware.ensureAdminActive()])
   })
@@ -198,6 +207,9 @@ router
  */
 router
   .group(() => {
+    // Public settings — no auth required (Req 5.5)
+    router.get('/settings/:key', [PublicSettingsController, 'show'])
+
     // Read routes — no auth required beyond rate limit
     router.get('/surveys/:slug', [PublicSurveyController, 'show'])
     router.get('/surveys/:slug/structure', [PublicSurveyController, 'structure'])

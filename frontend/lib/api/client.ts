@@ -86,6 +86,23 @@ async function handleResponse<T>(res: Response): Promise<T> {
 // ─── API Functions ───────────────────────────────────────────────────────────
 
 /**
+ * Fetch a single public setting by key.
+ * Returns { key, value } where value may be null if not configured.
+ * Used by the landing page SSR to read `landing_survey_link`.
+ */
+export async function fetchSettingByKey(key: string): Promise<{ key: string; value: string | null }> {
+  const res = await fetch(`${API_URL}/api/public/settings/${key}`, {
+    next: { revalidate: 60 },
+  })
+
+  if (!res.ok) {
+    return { key, value: null }
+  }
+
+  return res.json()
+}
+
+/**
  * Fetch survey landing metadata by slug.
  * Used by the SSR landing page.
  */

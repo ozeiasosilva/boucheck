@@ -96,6 +96,7 @@ export default class AiQuestionController {
           obrigatoria: q.obrigatoria,
           ordem: currentMax + index + 1,
           peso: 1,
+          dimensao: q.dimensao ?? null,
         },
         { confirmed: true }
       )

@@ -27,6 +27,7 @@ export type GeneratedQuestion = {
   texto: string
   tipo: 'escolha_unica' | 'multipla_escolha' | 'aberta'
   obrigatoria: boolean
+  dimensao?: string | null
   opcoes: Array<{ texto: string; pontuacao: number }>
 }
 
@@ -46,6 +47,7 @@ const generatedQuestionsSchema = vine.compile(
       texto: vine.string().minLength(1),
       tipo: vine.enum(ALLOWED_TYPES),
       obrigatoria: vine.boolean(),
+      dimensao: vine.string().minLength(1).optional(),
       opcoes: vine.array(
         vine.object({
           texto: vine.string().minLength(1),

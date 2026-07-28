@@ -489,6 +489,7 @@ export default function QuestionsPage() {
                   <div className="flex gap-2 mt-1.5 flex-wrap">
                     <Badge variant="gray">{typeLabel(q.tipo)}</Badge>
                     {q.obrigatoria ? <Badge variant="indigo">Obrigatória</Badge> : <Badge variant="gray">Opcional</Badge>}
+                    {q.dimensao && <Badge variant="green">{q.dimensao}</Badge>}
                     {q.tipo !== 'aberta' && <span className="text-xs text-gray-400">{q.opcoes?.length ?? 0} opções</span>}
                   </div>
                 </div>

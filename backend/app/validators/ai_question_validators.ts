@@ -36,6 +36,7 @@ export const Generated_Questions_Schema = vine.compile(
       texto: vine.string().minLength(1),
       tipo: vine.enum(ALLOWED_TYPES),
       obrigatoria: vine.boolean(),
+      dimensao: vine.string().minLength(1).optional(),
       opcoes: vine.array(
         vine.object({
           texto: vine.string().minLength(1),
@@ -58,6 +59,7 @@ export const confirmQuestionsValidator = vine.compile(
         texto: vine.string().minLength(1),
         tipo: vine.enum(ALLOWED_TYPES),
         obrigatoria: vine.boolean(),
+        dimensao: vine.string().minLength(1).optional(),
         opcoes: vine.array(
           vine.object({
             texto: vine.string().minLength(1),
@@ -84,5 +86,6 @@ export type GeneratedQuestion = {
   texto: string
   tipo: (typeof ALLOWED_TYPES)[number]
   obrigatoria: boolean
+  dimensao?: string | null
   opcoes: Array<{ texto: string; pontuacao: number }>
 }

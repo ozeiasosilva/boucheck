@@ -1,5 +1,6 @@
 export { getToken, setToken, clearToken } from './token'
 export {
+  fetchSettingByKey,
   fetchSurveyBySlug,
   fetchSurveyStructure,
   submitIdentification,

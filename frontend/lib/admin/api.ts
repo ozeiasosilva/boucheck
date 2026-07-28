@@ -455,6 +455,7 @@ export interface AiQuestion {
   texto: string
   tipo: 'escolha_unica' | 'multipla_escolha' | 'aberta'
   obrigatoria: boolean
+  dimensao?: string | null
   opcoes: Array<{ texto: string; pontuacao: number }>
 }
 
@@ -526,6 +527,20 @@ export const dashboardApi = {
     })
     return apiFetch<DashboardData>(`/dashboard?${params.toString()}`)
   },
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+
+export interface Setting {
+  key: string
+  value: string | null
+  updatedAt: string
+}
+
+export const settingsApi = {
+  getAll: () => apiFetch<Setting[]>('/settings'),
+  update: (settings: Record<string, string>) =>
+    apiFetch<{ message: string }>('/settings', { method: 'PUT', body: JSON.stringify(settings) }),
 }
 
 // ─── AI Insights ──────────────────────────────────────────────────────────────

@@ -3,12 +3,29 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Brand Colors */
+  /* ─── Design Tokens (Landing Page Redesign) ─── */
+  --color-navy:        #0A1E3C;
+  --color-blue:        #1D63ED;
+  --color-blue-soft:   #EAF1FE;
+  --color-orange:      #F7941D;
+  --color-orange-dark: #E07E00;
+  --color-bg:          #FFFFFF;
+  --color-bg-alt:      #F5F8FC;
+  --color-text:        #0F172A;
+  --color-text-muted:  #52627A;
+  --color-border:      #E3EAF3;
+
+  /* Radii */
+  --radius-card:       16px;
+  --radius-button:     10px;
+
+  /* Shadows */
+  --shadow-card:       0 4px 24px rgba(10, 30, 60, 0.07);
+
+  /* Legacy aliases for admin panel (unchanged) */
   --color-brand-blue: #1c57e5;
   --color-brand-orange: #ff8a00;
   --color-brand-dark: #010B31;
-
-  /* Semantic aliases */
   --color-primary: #1c57e5;
   --color-primary-hover: #1648c4;
   --color-primary-light: #e8effd;
@@ -16,4 +33,24 @@
   --color-accent-hover: #e67a00;
   --color-dark: #010B31;
   --color-dark-light: #0a1a4d;
+
+  /* Fonts */
+  --font-family-body: var(--font-body), system-ui, sans-serif;
+  --font-family-heading: var(--font-heading), system-ui, sans-serif;
+}
+
+/* ─── Focus visible for accessibility ─── */
+*:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

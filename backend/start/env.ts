@@ -35,6 +35,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   |--------------------------------------------------------------------------
   */
   CDN_BASE_URL: Env.schema.string.optional(),
+  FRONTEND_URL: Env.schema.string.optional(),
 
   /*
   |--------------------------------------------------------------------------
