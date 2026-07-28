@@ -1,14 +1,95 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { NavigationEngine } from '@/lib/navigation/engine'
-import { calculateProgress } from '@/lib/navigation/progress'
+import { computeEstimatedPath } from '@/lib/navigation/progress'
 import { getInvalidatedQuestions } from '@/lib/navigation/path_calculator'
-import type { SurveyStructure, Question, Answer } from '@/lib/navigation/types'
+import { ProgressBar } from '@/components/survey/progress-bar'
+import type { SurveyStructure, Question, Answer, Option } from '@/lib/navigation/types'
 import { useResponseToken } from '@/lib/api/response-context'
 import { useSurveyTheme } from '@/lib/api/survey-theme-context'
 import { fetchSurveyStructure, saveAnswer as saveAnswerApi, logEvent } from '@/lib/api/client'
+import { OptionCard } from '@/components/survey/option-card'
+
+interface OptionGroupContainerProps {
+  options: Option[]
+  selectedOptions: number[]
+  questionType: 'escolha_unica' | 'multipla_escolha'
+  onSelect: (optionId: number) => void
+  isDark: boolean
+  ariaLabel: string
+}
+
+function OptionGroupContainer({
+  options,
+  selectedOptions,
+  questionType,
+  onSelect,
+  isDark,
+  ariaLabel,
+}: OptionGroupContainerProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  function handleContainerKeyDown(e: React.KeyboardEvent) {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+
+    e.preventDefault()
+
+    const container = containerRef.current
+    if (!container) return
+
+    // Get all focusable OptionCard elements (children with role radio/checkbox)
+    const role = questionType === 'escolha_unica' ? 'radio' : 'checkbox'
+    const items = Array.from(
+      container.querySelectorAll<HTMLElement>(`[role="${role}"]`)
+    )
+    if (items.length === 0) return
+
+    const currentIndex = items.findIndex((el) => el === document.activeElement)
+    let nextIndex: number
+
+    if (e.key === 'ArrowDown') {
+      nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % items.length
+    } else {
+      // ArrowUp
+      nextIndex =
+        currentIndex <= 0 ? items.length - 1 : currentIndex - 1
+    }
+
+    // Update tabIndex: set all to -1, then the focused one to 0
+    items.forEach((el, i) => {
+      el.setAttribute('tabindex', i === nextIndex ? '0' : '-1')
+    })
+
+    items[nextIndex].focus()
+  }
+
+  const containerRole = questionType === 'escolha_unica' ? 'radiogroup' : 'group'
+
+  return (
+    <div
+      ref={containerRef}
+      className="space-y-2"
+      role={containerRole}
+      aria-label={ariaLabel}
+      onKeyDown={handleContainerKeyDown}
+    >
+      {options.map((option, index) => (
+        <OptionCard
+          key={option.id}
+          option={option}
+          index={index}
+          selected={selectedOptions.includes(option.id)}
+          questionType={questionType}
+          onSelect={onSelect}
+          darkMode={isDark}
+          tabIndex={index === 0 ? 0 : -1}
+        />
+      ))}
+    </div>
+  )
+}
 
 export default function PerguntasPage() {
   const params = useParams<{ slug: string }>()
@@ -22,7 +103,6 @@ export default function PerguntasPage() {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
   const [answers, setAnswers] = useState<Map<number, Answer>>(new Map())
   const [answeredPath, setAnsweredPath] = useState<number[]>([])
-  const [progress, setProgress] = useState(0)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -54,7 +134,6 @@ export default function PerguntasPage() {
           const first = questions[0]
           setCurrentQuestion(first)
           setAnsweredPath([first.id])
-          setProgress(0)
         }
 
         setLoading(false)
@@ -87,13 +166,6 @@ export default function PerguntasPage() {
     }
     setValidationError(null)
   }, [currentQuestion, answers])
-
-  // Update progress whenever answered path or answers change
-  useEffect(() => {
-    if (!structure || !currentQuestion) return
-    const p = calculateProgress(answeredPath, currentQuestion.id, structure, answers)
-    setProgress(p)
-  }, [answeredPath, currentQuestion, structure, answers])
 
   // Auto-save answer via PUT
   const saveAnswer = useCallback(
@@ -303,6 +375,13 @@ export default function PerguntasPage() {
   const isOptional = !currentQuestion.obrigatoria
   const isDark = mounted && surveyTheme === 'escuro'
 
+  // Compute estimated path dynamically (recalculates on every render when answers change)
+  const estimatedPath = structure ? computeEstimatedPath(structure, answers) : []
+  const totalEstimated = estimatedPath.length
+  const currentIndex = currentQuestion
+    ? estimatedPath.indexOf(currentQuestion.id) + 1  // 1-indexed
+    : 0
+
   return (
     <main className={`min-h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Logo header */}
@@ -310,17 +389,17 @@ export default function PerguntasPage() {
         <img src="/logo_completo.png" alt="BouCheck" className="h-8 w-auto object-contain" />
       </div>
 
-      {/* Progress bar */}
-      <div className={`w-full h-2 ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`} role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-        <div
-          className="bg-brand-orange h-2 transition-all duration-300 ease-in-out"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
       {/* Main content */}
       <div className="flex-1 flex items-start sm:items-center justify-center p-4 sm:p-8">
-        <div className={`w-full max-w-2xl rounded-xl shadow-sm p-6 sm:p-8 my-4 sm:my-0 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+        <div className="w-full max-w-2xl flex flex-col gap-4 my-4 sm:my-0">
+          {/* Progress bar - positioned between header and question card */}
+          <ProgressBar
+            currentIndex={currentIndex}
+            totalEstimated={totalEstimated}
+            darkMode={isDark}
+          />
+
+          <div className={`w-full rounded-xl shadow-sm p-6 sm:p-8 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
           {/* Question text */}
           <h1 className={`text-lg sm:text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {currentQuestion.texto}
@@ -333,60 +412,25 @@ export default function PerguntasPage() {
           {/* Question rendering by type */}
           <div className="mt-4 space-y-3">
             {currentQuestion.tipo === 'escolha_unica' && (
-              <div className="space-y-2" role="radiogroup" aria-label={currentQuestion.texto}>
-                {[...currentQuestion.options]
-                  .sort((a, b) => a.ordem - b.ordem)
-                  .map((option) => (
-                    <label
-                      key={option.id}
-                      className={`flex items-center gap-3 p-3 sm:p-4 rounded-lg border cursor-pointer transition-colors ${
-                        selectedOptions.includes(option.id)
-                          ? 'border-brand-blue bg-primary-light'
-                          : isDark
-                            ? 'border-gray-600 hover:border-gray-500 hover:bg-gray-700'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name={`question-${currentQuestion.id}`}
-                        value={option.id}
-                        checked={selectedOptions.includes(option.id)}
-                        onChange={() => handleSingleSelect(option.id)}
-                        className="w-4 h-4 text-brand-blue shrink-0"
-                      />
-                      <span className={`text-sm sm:text-base ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{option.texto}</span>
-                    </label>
-                  ))}
-              </div>
+              <OptionGroupContainer
+                options={[...currentQuestion.options].sort((a, b) => a.ordem - b.ordem)}
+                selectedOptions={selectedOptions}
+                questionType="escolha_unica"
+                onSelect={handleSingleSelect}
+                isDark={isDark}
+                ariaLabel={currentQuestion.texto}
+              />
             )}
 
             {currentQuestion.tipo === 'multipla_escolha' && (
-              <div className="space-y-2" role="group" aria-label={currentQuestion.texto}>
-                {[...currentQuestion.options]
-                  .sort((a, b) => a.ordem - b.ordem)
-                  .map((option) => (
-                    <label
-                      key={option.id}
-                      className={`flex items-center gap-3 p-3 sm:p-4 rounded-lg border cursor-pointer transition-colors ${
-                        selectedOptions.includes(option.id)
-                          ? 'border-brand-blue bg-primary-light'
-                          : isDark
-                            ? 'border-gray-600 hover:border-gray-500 hover:bg-gray-700'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        value={option.id}
-                        checked={selectedOptions.includes(option.id)}
-                        onChange={() => handleMultiSelect(option.id)}
-                        className="w-4 h-4 text-brand-blue rounded shrink-0"
-                      />
-                      <span className={`text-sm sm:text-base ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{option.texto}</span>
-                    </label>
-                  ))}
-              </div>
+              <OptionGroupContainer
+                options={[...currentQuestion.options].sort((a, b) => a.ordem - b.ordem)}
+                selectedOptions={selectedOptions}
+                questionType="multipla_escolha"
+                onSelect={handleMultiSelect}
+                isDark={isDark}
+                ariaLabel={currentQuestion.texto}
+              />
             )}
 
             {currentQuestion.tipo === 'aberta' && (
@@ -455,6 +499,7 @@ export default function PerguntasPage() {
               </button>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </main>

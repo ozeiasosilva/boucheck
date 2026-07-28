@@ -337,7 +337,7 @@ export default function IdentificacaoPage() {
             <label htmlFor="politica" className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
               Li e aceito a{' '}
               <a
-                href="/politica-de-privacidade"
+                href="https://www.beonup.com.br/aviso-de-privacidade"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-brand-blue underline hover:text-primary-hover"

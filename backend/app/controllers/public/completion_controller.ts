@@ -72,8 +72,26 @@ export default class CompletionController {
       )
     }
 
-    // Load the survey to include button config in the response (Req 4.1, 4.2, 4.3)
+    // Load the survey to include button config and email_notificacao (Req 4.1, 4.2, 4.3)
     const survey = await Survey.findOrFail(session.surveyId)
+
+    // Automatic internal team notification on every completion
+    // Sends respondent data to the survey's email_notificacao (same email used by consultant_notify)
+    if (survey.emailNotificacao) {
+      try {
+        await reportingQueue.enqueue({
+          kind: 'consultant_notify',
+          response_id: String(session.id),
+          to_email: survey.emailNotificacao,
+        })
+      } catch (err) {
+        // Log but don't fail — notification is non-critical
+        console.error(
+          `[completion-notify] Failed to enqueue consultant_notify for response_id=${session.id}:`,
+          err
+        )
+      }
+    }
 
     return response.ok({
       completed: true,

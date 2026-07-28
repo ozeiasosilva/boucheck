@@ -10,6 +10,7 @@ import ChecklistItem from '#models/checklist_item'
 import ScoreRange from '#models/score_range'
 import SystemAdminUserSeeder from './system_admin_user_seeder.js'
 import RaioXMaturidadeTiSeeder from './raio_x_maturidade_ti_seeder.js'
+import MaturidadeTiSeeder from './maturidade_ti_seeder.js'
 
 /**
  * Main seeder that orchestrates all sub-seeders in dependency order.
@@ -50,6 +51,10 @@ export default class MainSeeder extends BaseSeeder {
     // 9. Raio-X de Maturidade de TI survey (full question bank)
     const raioXSeeder = new RaioXMaturidadeTiSeeder(this.client)
     await raioXSeeder.run()
+
+    // 10. Maturidade de TI survey (categoria: maturidade-ti)
+    const maturidadeTiSeeder = new MaturidadeTiSeeder(this.client)
+    await maturidadeTiSeeder.run()
   }
 
   private async seedAdmin(): Promise<AdminUser> {

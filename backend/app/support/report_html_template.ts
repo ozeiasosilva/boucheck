@@ -15,6 +15,7 @@
 // ---------------------------------------------------------------------------
 
 import { buildLogoUrl } from '#support/build_logo_url'
+import { marked } from 'marked'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -115,7 +116,13 @@ function buildInlineStyles(vi: ReportContext['visualIdentity']): string {
     .radar-section svg { max-width: 100%; height: auto; }
     .recommendation-section { margin-bottom: 40px; padding: 24px; border-left: 4px solid ${esc(secondary)}; background: #f0fdf4; border-radius: 0 8px 8px 0; }
     .recommendation-section h2 { color: ${esc(primary)}; font-size: 20px; margin-bottom: 12px; }
-    .recommendation-section .recommendation-text { font-size: 15px; color: #333; white-space: pre-wrap; }
+    .recommendation-section .recommendation-text { font-size: 15px; color: #333; line-height: 1.7; }
+    .recommendation-section .recommendation-text h2 { color: ${esc(primary)}; font-size: 18px; font-weight: 600; margin-top: 24px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #e0e0e0; }
+    .recommendation-section .recommendation-text h3 { color: #333; font-size: 16px; font-weight: 600; margin-top: 16px; margin-bottom: 6px; }
+    .recommendation-section .recommendation-text p { margin-bottom: 12px; }
+    .recommendation-section .recommendation-text ul, .recommendation-section .recommendation-text ol { margin: 8px 0 12px 20px; }
+    .recommendation-section .recommendation-text li { margin-bottom: 6px; }
+    .recommendation-section .recommendation-text strong { color: #1a1a1a; }
     .answers-section { margin-bottom: 40px; }
     .answers-section h2 { color: ${esc(primary)}; font-size: 20px; margin-bottom: 16px; }
     .answer-item { margin-bottom: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; }
@@ -313,9 +320,12 @@ function renderPillarBars(dimensionScores: Array<{ dimensao: string; normalized:
 }
 
 function renderRecommendation(recommendationText: string): string {
+  // Convert Markdown to HTML for structured executive presentation
+  const htmlContent = marked.parse(recommendationText, { async: false }) as string
+
   return `<div class="recommendation-section">
     <h2>Recomendações</h2>
-    <div class="recommendation-text">${esc(recommendationText)}</div>
+    <div class="recommendation-text">${htmlContent}</div>
   </div>`
 }
 

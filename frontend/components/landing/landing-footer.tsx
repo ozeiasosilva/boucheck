@@ -24,7 +24,7 @@ export function LandingFooter() {
         {/* Links */}
         <nav aria-label="Links do rodapé" className="flex flex-col sm:flex-row gap-4 sm:gap-8 text-sm">
           <Link
-            href="/politica-de-privacidade"
+            href="https://www.beonup.com.br/aviso-de-privacidade"
             className="text-[#B9CDF5] hover:text-white transition-colors"
           >
             Política de Privacidade

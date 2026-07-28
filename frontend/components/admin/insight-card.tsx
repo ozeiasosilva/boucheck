@@ -1,11 +1,17 @@
 'use client'
 
+import { MarkdownRenderer } from './markdown-renderer'
+
 interface InsightCardProps {
   conteudo: string
   createdAt: string
 }
 
 export function InsightCard({ conteudo, createdAt }: InsightCardProps) {
+  if (!conteudo || conteudo.trim().length === 0) {
+    return null
+  }
+
   const formattedDate = new Date(createdAt).toLocaleString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
@@ -20,9 +26,10 @@ export function InsightCard({ conteudo, createdAt }: InsightCardProps) {
         <h3 className="text-sm font-semibold text-gray-700">Insight do Agente</h3>
         <span className="text-xs text-gray-400">Gerado em {formattedDate}</span>
       </div>
-      <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-        {conteudo}
-      </div>
+      <MarkdownRenderer
+        content={conteudo}
+        className="space-y-4 divide-y divide-gray-200 [&>*]:pt-4 [&>*:first-child]:pt-0"
+      />
     </div>
   )
 }

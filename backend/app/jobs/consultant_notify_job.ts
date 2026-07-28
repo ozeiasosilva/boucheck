@@ -70,14 +70,18 @@ export async function handleConsultantNotify(
     })
   )
 
-  // Load response for context (respondent name/company)
+  // Load response for context (respondent name/company/contact)
   const response = await Response.query().where('id', responseId).first()
   const nome = response?.nome ?? 'Respondente'
   const empresa = response?.empresa ?? '(não informado)'
+  const email = response?.email ?? null
+  const telefone = response?.telefone ?? null
+  const cargo = response?.cargo ?? null
+  const cidade = response?.cidade ?? null
 
   // Build and send the notification email
-  const subject = 'Nova solicitação de consultor — BouCheck'
-  const htmlBody = buildNotificationHtml(nome, empresa)
+  const subject = 'Novo diagnóstico concluído — BouCheck'
+  const htmlBody = buildNotificationHtml(nome, empresa, email, telefone, cargo, cidade)
 
   const rawMessage = buildMimeMessage({
     from: fromEmail,
@@ -105,23 +109,44 @@ export async function handleConsultantNotify(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function buildNotificationHtml(nome: string, empresa: string): string {
+function buildNotificationHtml(
+  nome: string,
+  empresa: string,
+  email: string | null,
+  telefone: string | null,
+  cargo: string | null,
+  cidade: string | null
+): string {
+  const rows: Array<{ label: string; value: string }> = [
+    { label: 'Nome', value: nome },
+    { label: 'Empresa', value: empresa },
+  ]
+  if (cargo) rows.push({ label: 'Cargo', value: cargo })
+  if (email) rows.push({ label: 'E-mail', value: email })
+  if (telefone) rows.push({ label: 'Telefone', value: telefone })
+  if (cidade) rows.push({ label: 'Cidade', value: cidade })
+
+  const tableRows = rows
+    .map(
+      (r) => `<tr>
+      <td style="padding: 6px 12px 6px 0; font-weight: bold; color: #555;">${esc(r.label)}:</td>
+      <td style="padding: 6px 0;">${esc(r.value)}</td>
+    </tr>`
+    )
+    .join('\n')
+
   return `<html>
-<body style="font-family: Arial, sans-serif; color: #333;">
-  <h2 style="color: #2c3e50;">Nova solicitação de consultor</h2>
-  <p>Um respondente solicitou agendar uma apresentação com um consultor.</p>
-  <table style="border-collapse: collapse; margin-top: 12px;">
-    <tr>
-      <td style="padding: 4px 12px 4px 0; font-weight: bold;">Nome:</td>
-      <td style="padding: 4px 0;">${esc(nome)}</td>
-    </tr>
-    <tr>
-      <td style="padding: 4px 12px 4px 0; font-weight: bold;">Empresa:</td>
-      <td style="padding: 4px 0;">${esc(empresa)}</td>
-    </tr>
+<body style="font-family: 'Segoe UI', Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="border-bottom: 3px solid #1c57e5; padding-bottom: 12px; margin-bottom: 20px;">
+    <h2 style="color: #1c57e5; margin: 0;">Novo diagnóstico concluído</h2>
+  </div>
+  <p>Um respondente completou o diagnóstico na plataforma BouCheck. Seguem os dados:</p>
+  <table style="border-collapse: collapse; margin: 16px 0; width: 100%;">
+    ${tableRows}
   </table>
+  <p style="margin-top: 20px; color: #555;">Acesse o <a href="https://app.boucheck.beonup.com.br/admin/responses" style="color: #1c57e5;">painel administrativo</a> para ver as respostas completas e o relatório.</p>
   <br/>
-  <p style="color: #666; font-size: 12px;">Este é um e-mail automático enviado pela plataforma BouCheck — BeOnUp.</p>
+  <p style="color: #999; font-size: 11px; border-top: 1px solid #eee; padding-top: 12px;">E-mail automático enviado pela plataforma BouCheck — BeOnUp.</p>
 </body>
 </html>`
 }
